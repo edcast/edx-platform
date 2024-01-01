@@ -37,7 +37,7 @@ from lms.djangoapps.course_api.blocks.api import get_blocks
 from lms.djangoapps.course_blocks.api import get_course_blocks
 from lms.djangoapps.courseware.courses import get_course_with_access
 from lms.djangoapps.courseware.exceptions import CourseAccessRedirect
-from lms.djangoapps.discussion.toggles import ENABLE_DISCUSSIONS_MFE, ENABLE_LEARNERS_TAB_IN_DISCUSSIONS_MFE
+from lms.djangoapps.discussion.toggles import ENABLE_DISCUSSIONS_MFE
 from lms.djangoapps.discussion.toggles_utils import reported_content_email_notification_enabled
 from lms.djangoapps.discussion.views import is_privileged_user
 from openedx.core.djangoapps.discussions.models import (
@@ -86,7 +86,6 @@ from xmodule.course_block import CourseBlock
 from xmodule.modulestore.django import modulestore
 from xmodule.tabs import CourseTabList
 
-from ..config.waffle import ENABLE_LEARNERS_STATS
 from ..django_comment_client.base.views import (
     track_comment_created_event,
     track_comment_deleted_event,
@@ -366,7 +365,6 @@ def get_course(request, course_key):
         "provider": course_config.provider_type,
         "enable_in_context": course_config.enable_in_context,
         "group_at_subsection": course_config.plugin_configuration.get("group_at_subsection", False),
-        'learners_tab_enabled': ENABLE_LEARNERS_TAB_IN_DISCUSSIONS_MFE.is_enabled(course_key),
         "edit_reasons": [
             {"code": reason_code, "label": label}
             for (reason_code, label) in EDIT_REASON_CODES.items()
@@ -1859,7 +1857,7 @@ def get_course_discussion_user_stats(
         if order_by == UserOrdering.BY_FLAGS:
             raise ValidationError({"order_by": "Invalid value"})
 
-    if not ENABLE_LEARNERS_STATS.is_enabled(course_key):
+    if not ENABLE_DISCUSSIONS_MFE.is_enabled(course_key):
         return get_users_without_stats(
             username_search_string,
             course_key,
