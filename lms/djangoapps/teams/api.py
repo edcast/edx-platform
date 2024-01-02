@@ -232,7 +232,7 @@ def has_specific_teamset_access(user, course_block, teamset_id):
     user_has_manage_student_permission = user.has_perm(CourseRolesPermission.MANAGE_STUDENTS.perm_name)
     return (
         has_course_staff_privileges(user, course_block.id) or
-        user_has_manage_student_permission or \
+        user_has_manage_student_permission or
         teamset_is_public_or_user_is_on_team_in_teamset(user, course_block, teamset_id)
     )
 

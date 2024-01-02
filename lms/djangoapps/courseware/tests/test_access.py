@@ -872,13 +872,13 @@ class CourseOverviewAccessTestCase(ModuleStoreTestCase):
             if course_attr_name == 'course_started':
                 num_queries = 2
             else:
-                num_queries = 1
+                num_queries = 3
         elif user_attr_name == 'user_normal' and action == 'see_exists':
             if course_attr_name == 'course_started':
                 num_queries = 4
             else:
                 # checks staff role and enrollment data
-                num_queries = 2
+                num_queries = 4
         elif user_attr_name == 'user_anonymous' and action == 'see_exists':
             if course_attr_name == 'course_started':
                 num_queries = 1
@@ -945,14 +945,14 @@ class CourseOverviewAccessTestCase(ModuleStoreTestCase):
                 num_queries = 2
             else:
                 # read: CourseAccessRole + EnterpriseCourseEnrollment
-                num_queries = 2
+                num_queries = 4
         elif user_attr_name == 'user_normal':
             if course_attr_name == 'course_started':
                 # read: CourseAccessRole + django_comment_client.Role + FBEEnrollmentExclusion + CourseMode
                 num_queries = 4
             else:
                 # read: CourseAccessRole + CourseEnrollmentAllowed + EnterpriseCourseEnrollment
-                num_queries = 3
+                num_queries = 5
         elif user_attr_name == 'user_anonymous':
             if course_attr_name == 'course_started':
                 # read: CourseMode

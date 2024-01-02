@@ -745,7 +745,7 @@ def _has_access_to_course(user, access_level, course_key):
     if instructor_access and access_level in ('staff', 'instructor'):
         debug("Allow: user has course instructor access")
         return ACCESS_GRANTED
-    
+
     if permissions_access:
         debug("Allow: user has view all content permission")
         return ACCESS_GRANTED

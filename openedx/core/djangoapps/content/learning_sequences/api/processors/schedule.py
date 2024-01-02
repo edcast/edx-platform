@@ -69,7 +69,6 @@ class ScheduleOutlineProcessor(OutlineProcessor):
             self.user.has_perm(CourseRolesPermission.VIEW_LIVE_PUBLISHED_CONTENT.perm_name)
         )
 
-
     def inaccessible_sequences(self, full_course_outline):
         """
         This might include Sequences that have not yet started, or Sequences

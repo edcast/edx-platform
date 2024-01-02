@@ -251,7 +251,8 @@ class BulkTeamCountTopicSerializerTestCase(BaseTopicSerializerTestCase):
         request = RequestFactory().get('/api/team/v0/topics')
         request.user = self.user
 
-        with self.assertNumQueries(num_queries + 2):  # num_queries on teams tables, plus 2 split modulestore queries
+        with self.assertNumQueries(num_queries + 5):
+            # num_queries on teams tables, plus 2 split modulestore queries, plus 3 perms queries
             serializer = self.serializer(
                 topics,
                 context={
