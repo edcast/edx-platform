@@ -512,4 +512,3 @@ class ExamCompletionEventBusTests(TestCase):
         }
         handle_exam_attempt_rejected_event(None, EXAM_ATTEMPT_REJECTED, **event_kwargs)
         mock_api_function.assert_called_once_with(self.student_user.id, self.course_key, source='exam_event')
-
