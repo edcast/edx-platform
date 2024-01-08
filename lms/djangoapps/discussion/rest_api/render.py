@@ -13,8 +13,8 @@ ALLOWED_TAGS = nh3.ALLOWED_TAGS | {
 }
 ALLOWED_PROTOCOLS = {"http", "https", "ftp", "mailto"}
 ALLOWED_ATTRIBUTES = {
-    "a": ["href", "title", "target", "rel"],
-    "img": ["src", "alt", "title", "width", "height"],
+    "a": {"href", "title", "target", "rel"},
+    "img": {"src", "alt", "title", "width", "height"},
 }
 
 
