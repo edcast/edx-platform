@@ -17,7 +17,7 @@ from openedx.core.djangolib.testing.utils import get_mock_request, CacheIsolatio
 from common.djangoapps.student.tests.factories import UserFactory
 
 from ..middleware import (
-    EmailChangeSessionInvalidationMiddleware,
+    EmailChangeMiddleware,
     SafeCookieData,
     SafeSessionMiddleware,
     mark_user_change_as_expected,
@@ -618,9 +618,9 @@ class TestTrackRequestUserChanges(TestCase):
         assert "Changing request user but user has no id." in request.debug_user_changes[1]
 
 
-class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, TestCase):
+class TestEmailChangeMiddleware(TestSafeSessionsLogMixin, TestCase):
     """
-    Test class for EmailChangeSessionInvalidationMiddleware
+    Test class for EmailChangeMiddleware
     """
 
     def setUp(self):
@@ -636,7 +636,7 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
     @patch('openedx.core.djangoapps.safe_sessions.middleware._mark_cookie_for_deletion')
     def test_process_request_settings_disabled(self, mock_mark_cookie_for_deletion):
         """
-        Calls EmailChangeSessionInvalidationMiddleware.process_request when no user is authenticated.
+        Calls EmailChangeMiddleware.process_request when no user is authenticated.
         Verifies that session and cookies are not affected.
         """
         # Log in the user
@@ -647,7 +647,7 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
         self.assertIsNone(self.request.session.get('email'))
 
         # Call process_request without authenticating a user
-        EmailChangeSessionInvalidationMiddleware(get_response=lambda request: None).process_request(self.request)
+        EmailChangeMiddleware(get_response=lambda request: None).process_request(self.request)
 
         # Assert that session and cookies are not affected
         # Assert that _mark_cookie_for_deletion not called
@@ -657,14 +657,14 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
     @patch('openedx.core.djangoapps.safe_sessions.middleware._mark_cookie_for_deletion')
     def test_process_request_not_authenticated(self, mock_mark_cookie_for_deletion):
         """
-        Calls EmailChangeSessionInvalidationMiddleware.process_request when no user is authenticated.
+        Calls EmailChangeMiddleware.process_request when no user is authenticated.
         Verifies that session and cookies are not affected.
         """
         # Unauthenticated User
         self.request.user = AnonymousUser()
 
         # Call process_request without authenticating a user
-        EmailChangeSessionInvalidationMiddleware(get_response=lambda request: None).process_request(self.request)
+        EmailChangeMiddleware(get_response=lambda request: None).process_request(self.request)
 
         # Assert that session and cookies are not affected
         # Assert that _mark_cookie_for_deletion not called
@@ -673,7 +673,7 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
     @override_settings(ENFORCE_SESSION_EMAIL_MATCH=True)
     def test_process_request_authenticated_no_session_email(self):
         """
-        Calls EmailChangeSessionInvalidationMiddleware.process_request when a user is authenticated
+        Calls EmailChangeMiddleware.process_request when a user is authenticated
         but there is no email in the session. Verifies that session and cookies are not affected.
         """
         # Log in the user
@@ -684,7 +684,7 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
         self.assertIsNone(self.request.session.get('email'))
 
         # Call process_request
-        EmailChangeSessionInvalidationMiddleware(get_response=lambda request: None).process_request(self.request)
+        EmailChangeMiddleware(get_response=lambda request: None).process_request(self.request)
 
         # Assert that the session and cookies are not affected
         self.assertIsNone(self.request.session.get('email'))
@@ -693,7 +693,7 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
     @override_settings(ENFORCE_SESSION_EMAIL_MATCH=True)
     def test_process_request_authenticated_matching_session_email(self):
         """
-        Calls EmailChangeSessionInvalidationMiddleware.process_request when a user is authenticated
+        Calls EmailChangeMiddleware.process_request when a user is authenticated
         and the session email matches request.user.email. Verifies that session and cookies are not affected.
         """
         # Log in the user
@@ -708,7 +708,7 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
         self.assertEqual(len(self.client.response.cookies), 1)
 
         # Call process_request
-        EmailChangeSessionInvalidationMiddleware(get_response=lambda request: None).process_request(self.request)
+        EmailChangeMiddleware(get_response=lambda request: None).process_request(self.request)
 
         # Assert that the session and cookies are not affected
         self.assertEqual(self.request.session.get('email'), self.user.email)
@@ -719,7 +719,7 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
     @patch('openedx.core.djangoapps.safe_sessions.middleware._mark_cookie_for_deletion')
     def test_process_request_email_mismatch(self, mock_mark_cookie_for_deletion):
         """
-        Calls EmailChangeSessionInvalidationMiddleware.process_request with
+        Calls EmailChangeMiddleware.process_request with
         a mismatch between session email and user email. Verifies that session
         is flushed and cookies are marked for deletion.
         """
@@ -733,7 +733,7 @@ class TestEmailChangeSessionInvalidationMiddleware(TestSafeSessionsLogMixin, Tes
         self.request.session['email'] = 'mismatched_email@example.com'
 
         # Call process_request
-        EmailChangeSessionInvalidationMiddleware(get_response=lambda request: None).process_request(self.request)
+        EmailChangeMiddleware(get_response=lambda request: None).process_request(self.request)
 
         # Assert that the session is flushed and cookies marked for deletion
         mock_mark_cookie_for_deletion.assert_called()
