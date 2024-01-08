@@ -34,7 +34,7 @@ def render_body(raw_body):
     sanitised_html = nh3.clean(
         rendered_html,
         tags=ALLOWED_TAGS,
-        protocols=ALLOWED_PROTOCOLS,
+        # protocols=ALLOWED_PROTOCOLS,
         strip_comments=True,
         attributes=ALLOWED_ATTRIBUTES
     )

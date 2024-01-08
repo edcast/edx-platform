@@ -189,7 +189,7 @@ def sanitize_html(html_code):
     })
     output = nh3.clean(
         html_code,
-        protocols=nh3.ALLOWED_PROTOCOLS | {'data'},
+        # protocols=nh3.ALLOWED_PROTOCOLS | {'data'},
         tags=nh3.ALLOWED_TAGS | {'div', 'p', 'audio', 'pre', 'img', 'span'},
         attributes=attributes
     )
