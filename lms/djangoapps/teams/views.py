@@ -1074,7 +1074,7 @@ def _filter_hidden_private_teamsets(user, teamsets, course_block):
     # TODO: remove role checks once course_roles is fully impelented and data is migrated
     if (
         has_course_staff_privileges(user, course_block.id) or
-        user.has_perm(CourseRolesPermission.MANAGE_STUDENTS.perm_name)
+        user.has_perm(CourseRolesPermission.MANAGE_STUDENTS.perm_name, course_block.id)
     ):
         return teamsets
     private_teamset_ids = [teamset.teamset_id for teamset in course_block.teamsets if teamset.is_private_managed]
@@ -1392,7 +1392,7 @@ class MembershipListView(ExpandableFieldViewMixin, GenericAPIView):
             # TODO: remove role checks once course_roles is fully impelented and data is migrated
             if (
                 has_course_staff_privileges(request.user, requested_course_key) or
-                request.user.has_perm(CourseRolesPermission.MANAGE_STUDENTS.perm_name)
+                request.user.has_perm(CourseRolesPermission.MANAGE_STUDENTS.perm_name, requested_course_key)
             ):
                 teams_with_access = list(teamset_teams)
             else:
@@ -1701,7 +1701,7 @@ class MembershipBulkManagementView(GenericAPIView):
         # TODO: remove role checks once course_roles is fully impelented and data is migrated
         if not (
             has_course_staff_privileges(self.request.user, self.course.id) or
-            self.request.user.has_perm(CourseRolesPermission.MANAGE_STUDENTS.perm_name)
+            self.request.user.has_perm(CourseRolesPermission.MANAGE_STUDENTS.perm_name, self.course_id)
         ):
             raise PermissionDenied(
                 "To manage team membership of {}, you must be course staff.".format(
