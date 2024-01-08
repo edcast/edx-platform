@@ -213,12 +213,12 @@ def remove_markup(html):
     """
     Return html with markup stripped and text HTML-escaped.
 
-    >>> nh3.clean("<b>Rock & Roll</b>", tags=set(), strip=True)
+    >>> nh3.clean("<b>Rock & Roll</b>", tags=set(), strip_comments=True)
     'Rock &amp; Roll'
-    >>> nh3.clean("<b>Rock &amp; Roll</b>", tags=set(), strip=True)
+    >>> nh3.clean("<b>Rock &amp; Roll</b>", tags=set(), strip_comments=True)
     'Rock &amp; Roll'
     """
-    return HTML(nh3.clean(html, tags=set(), strip=True))
+    return HTML(nh3.clean(html, tags=set(), strip_comments=True))
 
 
 def get_course_id_from_capa_block(capa_block):

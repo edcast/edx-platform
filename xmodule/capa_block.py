@@ -557,7 +557,7 @@ class ProblemBlock(
         capa_content = re.sub(
             r"(\s|&nbsp;|//)+",
             " ",
-            nh3.clean(capa_content, tags=[], strip=True)
+            nh3.clean(capa_content, tags=[], strip_comments=True)
         )
 
         capa_body = {

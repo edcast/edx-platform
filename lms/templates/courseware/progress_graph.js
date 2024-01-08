@@ -74,7 +74,7 @@ $(function () {
       ## allowing the display of such images, and remove any previously stored HTML
       ## to prevent ugly HTML from being shown to learners.
       ## xss-lint: disable=javascript-jquery-append
-      ticks.append( [tickIndex, nh3.clean(section['label'], tags=set(), strip=True)] )
+      ticks.append( [tickIndex, nh3.clean(section['label'], tags=set(), strip_comments=True)] )
 
       if section['category'] in detail_tooltips:
           ## xss-lint: disable=javascript-jquery-append

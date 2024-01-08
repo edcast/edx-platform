@@ -35,7 +35,7 @@ def render_body(raw_body):
         rendered_html,
         tags=ALLOWED_TAGS,
         protocols=ALLOWED_PROTOCOLS,
-        strip=True,
+        strip_comments=True,
         attributes=ALLOWED_ATTRIBUTES
     )
     return sanitised_html
