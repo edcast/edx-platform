@@ -1,0 +1,1402 @@
+From 808194376f86c31876187cbea6b771ad46e26ded Mon Sep 17 00:00:00 2001
+From: hdubey09 <hdubey@csod.com>
+Date: Thu, 11 Jan 2024 18:11:31 +0530
+Subject: [PATCH 2/2] Made changes to fill the gap of migrations for the palm
+ release.
+
+---
+ .../0002_courseeditltifieldsenabledflag.py    |  24 +-
+ .../student/migrations/0001_initial.py        | 287 ++++++++++++++++++
+ .../0001_squashed_0031_auto_20200317_1122.py  |   2 +
+ .../migrations/0002_auto_20151208_1034.py     |  21 ++
+ .../migrations/0003_auto_20160516_0938.py     |  30 ++
+ .../migrations/0004_auto_20160531_1422.py     |  16 +
+ .../migrations/0005_auto_20160531_1653.py     |  16 +
+ .../0006_logoutviewconfiguration.py           |  27 ++
+ .../0007_registrationcookieconfiguration.py   |  29 ++
+ .../migrations/0008_auto_20161117_1209.py     |  16 +
+ .../migrations/0009_auto_20170111_0422.py     |  15 +
+ .../migrations/0010_auto_20170207_0458.py     |  27 ++
+ .../0011_course_key_field_to_foreign_key.py   |  73 +++++
+ .../student/migrations/0012_sociallink.py     |  20 ++
+ ...13_delete_historical_enrollment_records.py |  26 ++
+ .../0014_courseenrollmentallowed_user.py      |  18 ++
+ .../0015_manualenrollmentaudit_add_role.py    |  16 +
+ ...senrollment_course_on_delete_do_nothing.py |  20 ++
+ .../migrations/0017_accountrecovery.py        |  28 ++
+ .../0018_remove_password_history.py           |  21 ++
+ .../migrations/0019_auto_20181221_0540.py     |  34 +++
+ .../migrations/0020_auto_20190227_2019.py     |  18 ++
+ .../0021_historicalcourseenrollment.py        |  44 +++
+ .../0022_indexing_in_courseenrollment.py      |  18 ++
+ .../0023_bulkunenrollconfiguration.py         |  32 ++
+ .../migrations/0024_fbeenrollmentexclusion.py |  22 ++
+ .../migrations/0025_auto_20191101_1846.py     |  33 ++
+ .../migrations/0026_allowedauthuser.py        |  31 ++
+ ..._courseenrollment_mode_callable_default.py |  26 ++
+ .../0028_historicalmanualenrollmentaudit.py   |  41 +++
+ .../migrations/0029_add_data_researcher.py    |  30 ++
+ .../0030_userprofile_phone_number.py          |  20 ++
+ .../migrations/0031_auto_20200317_1122.py     |  30 ++
+ 33 files changed, 1110 insertions(+), 1 deletion(-)
+ create mode 100644 common/djangoapps/student/migrations/0001_initial.py
+ create mode 100644 common/djangoapps/student/migrations/0002_auto_20151208_1034.py
+ create mode 100644 common/djangoapps/student/migrations/0003_auto_20160516_0938.py
+ create mode 100644 common/djangoapps/student/migrations/0004_auto_20160531_1422.py
+ create mode 100644 common/djangoapps/student/migrations/0005_auto_20160531_1653.py
+ create mode 100644 common/djangoapps/student/migrations/0006_logoutviewconfiguration.py
+ create mode 100644 common/djangoapps/student/migrations/0007_registrationcookieconfiguration.py
+ create mode 100644 common/djangoapps/student/migrations/0008_auto_20161117_1209.py
+ create mode 100644 common/djangoapps/student/migrations/0009_auto_20170111_0422.py
+ create mode 100644 common/djangoapps/student/migrations/0010_auto_20170207_0458.py
+ create mode 100644 common/djangoapps/student/migrations/0011_course_key_field_to_foreign_key.py
+ create mode 100644 common/djangoapps/student/migrations/0012_sociallink.py
+ create mode 100644 common/djangoapps/student/migrations/0013_delete_historical_enrollment_records.py
+ create mode 100644 common/djangoapps/student/migrations/0014_courseenrollmentallowed_user.py
+ create mode 100644 common/djangoapps/student/migrations/0015_manualenrollmentaudit_add_role.py
+ create mode 100644 common/djangoapps/student/migrations/0016_coursenrollment_course_on_delete_do_nothing.py
+ create mode 100644 common/djangoapps/student/migrations/0017_accountrecovery.py
+ create mode 100644 common/djangoapps/student/migrations/0018_remove_password_history.py
+ create mode 100644 common/djangoapps/student/migrations/0019_auto_20181221_0540.py
+ create mode 100644 common/djangoapps/student/migrations/0020_auto_20190227_2019.py
+ create mode 100644 common/djangoapps/student/migrations/0021_historicalcourseenrollment.py
+ create mode 100644 common/djangoapps/student/migrations/0022_indexing_in_courseenrollment.py
+ create mode 100644 common/djangoapps/student/migrations/0023_bulkunenrollconfiguration.py
+ create mode 100644 common/djangoapps/student/migrations/0024_fbeenrollmentexclusion.py
+ create mode 100644 common/djangoapps/student/migrations/0025_auto_20191101_1846.py
+ create mode 100644 common/djangoapps/student/migrations/0026_allowedauthuser.py
+ create mode 100644 common/djangoapps/student/migrations/0027_courseenrollment_mode_callable_default.py
+ create mode 100644 common/djangoapps/student/migrations/0028_historicalmanualenrollmentaudit.py
+ create mode 100644 common/djangoapps/student/migrations/0029_add_data_researcher.py
+ create mode 100644 common/djangoapps/student/migrations/0030_userprofile_phone_number.py
+ create mode 100644 common/djangoapps/student/migrations/0031_auto_20200317_1122.py
+
+diff --git a/cms/djangoapps/xblock_config/migrations/0002_courseeditltifieldsenabledflag.py b/cms/djangoapps/xblock_config/migrations/0002_courseeditltifieldsenabledflag.py
+index ef9aecb0d6..6f38734eb6 100644
+--- a/cms/djangoapps/xblock_config/migrations/0002_courseeditltifieldsenabledflag.py
++++ b/cms/djangoapps/xblock_config/migrations/0002_courseeditltifieldsenabledflag.py
+@@ -3,6 +3,28 @@ from django.conf import settings
+ from django.db import migrations, models
+ from opaque_keys.edx.django.models import CourseKeyField
+ 
++class CreateModelIfNotExists(migrations.CreateModel):
++    """
++    Creates the database table if it doesn't already exist.
++
++    This can be used to move a database model from one app to another.
++    """
++
++    def database_forwards(self, app_label, schema_editor, from_state, to_state):
++        # Get the name of the database table
++        db_table = to_state.apps.get_model(app_label, self.name)._meta.db_table
++        # If the database table for this model already exists, do nothing, otherwise
++        # create the table as usual.
++        if db_table in schema_editor.connection.introspection.table_names():
++            print(f"{db_table} already exists. Skipping creation.")
++        else:
++            super().database_forwards(app_label, schema_editor, from_state, to_state)
++
++    def database_backwards(self, app_label, schema_editor, from_state, to_state):
++        # Do nothing when applying this is reverse because the original creation of this
++        # table was handled by edx-platform, so we don't want to delete the table on reversal.
++        pass
++
+ 
+ class Migration(migrations.Migration):
+ 
+@@ -12,7 +34,7 @@ class Migration(migrations.Migration):
+     ]
+ 
+     operations = [
+-        migrations.CreateModel(
++        CreateModelIfNotExists(
+             name='CourseEditLTIFieldsEnabledFlag',
+             fields=[
+                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+diff --git a/common/djangoapps/student/migrations/0001_initial.py b/common/djangoapps/student/migrations/0001_initial.py
+new file mode 100644
+index 0000000000..6cabce5cdd
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0001_initial.py
+@@ -0,0 +1,287 @@
++import django.db.models.deletion
++import django.utils.timezone
++import django_countries.fields
++from django.conf import settings
++from django.db import migrations, models
++from opaque_keys.edx.django.models import CourseKeyField
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='AnonymousUserId',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('anonymous_user_id', models.CharField(unique=True, max_length=32)),
++                ('course_id', CourseKeyField(db_index=True, max_length=255, blank=True)),
++                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='CourseAccessRole',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('org', models.CharField(db_index=True, max_length=64, blank=True)),
++                ('course_id', CourseKeyField(db_index=True, max_length=255, blank=True)),
++                ('role', models.CharField(max_length=64, db_index=True)),
++                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='CourseEnrollment',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('course_id', CourseKeyField(max_length=255, db_index=True)),
++                ('created', models.DateTimeField(db_index=True, auto_now_add=True, null=True)),
++                ('is_active', models.BooleanField(default=True)),
++                ('mode', models.CharField(default=b'honor', max_length=100)),
++                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++            options={
++                'ordering': ('user', 'course_id'),
++            },
++        ),
++        migrations.CreateModel(
++            name='CourseEnrollmentAllowed',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('email', models.CharField(max_length=255, db_index=True)),
++                ('course_id', CourseKeyField(max_length=255, db_index=True)),
++                ('auto_enroll', models.BooleanField(default=0)),
++                ('created', models.DateTimeField(db_index=True, auto_now_add=True, null=True)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='CourseEnrollmentAttribute',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('namespace', models.CharField(help_text='Namespace of enrollment attribute', max_length=255)),
++                ('name', models.CharField(help_text='Name of the enrollment attribute', max_length=255)),
++                ('value', models.CharField(help_text='Value of the enrollment attribute', max_length=255)),
++                ('enrollment', models.ForeignKey(related_name='attributes', to='student.CourseEnrollment', on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='DashboardConfiguration',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('change_date', models.DateTimeField(auto_now_add=True, verbose_name='Change date')),
++                ('enabled', models.BooleanField(default=False, verbose_name='Enabled')),
++                ('recent_enrollment_time_delta', models.PositiveIntegerField(default=0, help_text="The number of seconds in which a new enrollment is considered 'recent'. Used to display notifications.")),
++                ('changed_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, editable=False, to=settings.AUTH_USER_MODEL, null=True, verbose_name='Changed by')),
++            ],
++            options={
++                'ordering': ('-change_date',),
++                'abstract': False,
++            },
++        ),
++        migrations.CreateModel(
++            name='EnrollmentRefundConfiguration',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('change_date', models.DateTimeField(auto_now_add=True, verbose_name='Change date')),
++                ('enabled', models.BooleanField(default=False, verbose_name='Enabled')),
++                ('refund_window_microseconds', models.BigIntegerField(default=1209600000000, help_text='The window of time after enrolling during which users can be granted a refund, represented in microseconds. The default is 14 days.')),
++                ('changed_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, editable=False, to=settings.AUTH_USER_MODEL, null=True, verbose_name='Changed by')),
++            ],
++            options={
++                'ordering': ('-change_date',),
++                'abstract': False,
++            },
++        ),
++        migrations.CreateModel(
++            name='EntranceExamConfiguration',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('course_id', CourseKeyField(max_length=255, db_index=True)),
++                ('created', models.DateTimeField(db_index=True, auto_now_add=True, null=True)),
++                ('updated', models.DateTimeField(auto_now=True, db_index=True)),
++                ('skip_entrance_exam', models.BooleanField(default=True)),
++                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='HistoricalCourseEnrollment',
++            fields=[
++                ('id', models.IntegerField(verbose_name='ID', db_index=True, auto_created=True, blank=True)),
++                ('course_id', CourseKeyField(max_length=255, db_index=True)),
++                ('created', models.DateTimeField(db_index=True, null=True, editable=False, blank=True)),
++                ('is_active', models.BooleanField(default=True)),
++                ('mode', models.CharField(default=b'honor', max_length=100)),
++                ('history_id', models.AutoField(serialize=False, primary_key=True)),
++                ('history_date', models.DateTimeField()),
++                ('history_type', models.CharField(max_length=1, choices=[('+', 'Created'), ('~', 'Changed'), ('-', 'Deleted')])),
++                ('history_user', models.ForeignKey(related_name='+', on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL, null=True)),
++                ('user', models.ForeignKey(related_name='+', on_delete=django.db.models.deletion.DO_NOTHING, db_constraint=False, blank=True, to=settings.AUTH_USER_MODEL, null=True)),
++            ],
++            options={
++                'ordering': ('-history_date', '-history_id'),
++                'get_latest_by': 'history_date',
++                'verbose_name': 'historical course enrollment',
++            },
++        ),
++        migrations.CreateModel(
++            name='LanguageProficiency',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('code', models.CharField(help_text='The ISO 639-1 language code for this language.', max_length=16, choices=[['aa', 'Afar'], ['ab', 'Abkhazian'], ['af', 'Afrikaans'], ['ak', 'Akan'], ['sq', 'Albanian'], ['am', 'Amharic'], ['ar', 'Arabic'], ['an', 'Aragonese'], ['hy', 'Armenian'], ['as', 'Assamese'], ['av', 'Avaric'], ['ae', 'Avestan'], ['ay', 'Aymara'], ['az', 'Azerbaijani'], ['ba', 'Bashkir'], ['bm', 'Bambara'], ['eu', 'Basque'], ['be', 'Belarusian'], ['bn', 'Bengali'], ['bh', 'Bihari languages'], ['bi', 'Bislama'], ['bs', 'Bosnian'], ['br', 'Breton'], ['bg', 'Bulgarian'], ['my', 'Burmese'], ['ca', 'Catalan'], ['ch', 'Chamorro'], ['ce', 'Chechen'], ['zh', 'Chinese'], ['zh_HANS', 'Simplified Chinese'], ['zh_HANT', 'Traditional Chinese'], ['cu', 'Church Slavic'], ['cv', 'Chuvash'], ['kw', 'Cornish'], ['co', 'Corsican'], ['cr', 'Cree'], ['cs', 'Czech'], ['da', 'Danish'], ['dv', 'Divehi'], ['nl', 'Dutch'], ['dz', 'Dzongkha'], ['en', 'English'], ['eo', 'Esperanto'], ['et', 'Estonian'], ['ee', 'Ewe'], ['fo', 'Faroese'], ['fj', 'Fijian'], ['fi', 'Finnish'], ['fr', 'French'], ['fy', 'Western Frisian'], ['ff', 'Fulah'], ['ka', 'Georgian'], ['de', 'German'], ['gd', 'Gaelic'], ['ga', 'Irish'], ['gl', 'Galician'], ['gv', 'Manx'], ['el', 'Greek'], ['gn', 'Guarani'], ['gu', 'Gujarati'], ['ht', 'Haitian'], ['ha', 'Hausa'], ['he', 'Hebrew'], ['hz', 'Herero'], ['hi', 'Hindi'], ['ho', 'Hiri Motu'], ['hr', 'Croatian'], ['hu', 'Hungarian'], ['ig', 'Igbo'], ['is', 'Icelandic'], ['io', 'Ido'], ['ii', 'Sichuan Yi'], ['iu', 'Inuktitut'], ['ie', 'Interlingue'], ['ia', 'Interlingua'], ['id', 'Indonesian'], ['ik', 'Inupiaq'], ['it', 'Italian'], ['jv', 'Javanese'], ['ja', 'Japanese'], ['kl', 'Kalaallisut'], ['kn', 'Kannada'], ['ks', 'Kashmiri'], ['kr', 'Kanuri'], ['kk', 'Kazakh'], ['km', 'Central Khmer'], ['ki', 'Kikuyu'], ['rw', 'Kinyarwanda'], ['ky', 'Kirghiz'], ['kv', 'Komi'], ['kg', 'Kongo'], ['ko', 'Korean'], ['kj', 'Kuanyama'], ['ku', 'Kurdish'], ['lo', 'Lao'], ['la', 'Latin'], ['lv', 'Latvian'], ['li', 'Limburgan'], ['ln', 'Lingala'], ['lt', 'Lithuanian'], ['lb', 'Luxembourgish'], ['lu', 'Luba-Katanga'], ['lg', 'Ganda'], ['mk', 'Macedonian'], ['mh', 'Marshallese'], ['ml', 'Malayalam'], ['mi', 'Maori'], ['mr', 'Marathi'], ['ms', 'Malay'], ['mg', 'Malagasy'], ['mt', 'Maltese'], ['mn', 'Mongolian'], ['na', 'Nauru'], ['nv', 'Navajo'], ['nr', 'Ndebele, South'], ['nd', 'Ndebele, North'], ['ng', 'Ndonga'], ['ne', 'Nepali'], ['nn', 'Norwegian Nynorsk'], ['nb', 'Bokm\xe5l, Norwegian'], ['no', 'Norwegian'], ['ny', 'Chichewa'], ['oc', 'Occitan'], ['oj', 'Ojibwa'], ['or', 'Oriya'], ['om', 'Oromo'], ['os', 'Ossetian'], ['pa', 'Panjabi'], ['fa', 'Persian'], ['pi', 'Pali'], ['pl', 'Polish'], ['pt', 'Portuguese'], ['ps', 'Pushto'], ['qu', 'Quechua'], ['rm', 'Romansh'], ['ro', 'Romanian'], ['rn', 'Rundi'], ['ru', 'Russian'], ['sg', 'Sango'], ['sa', 'Sanskrit'], ['si', 'Sinhala'], ['sk', 'Slovak'], ['sl', 'Slovenian'], ['se', 'Northern Sami'], ['sm', 'Samoan'], ['sn', 'Shona'], ['sd', 'Sindhi'], ['so', 'Somali'], ['st', 'Sotho, Southern'], ['es', 'Spanish'], ['sc', 'Sardinian'], ['sr', 'Serbian'], ['ss', 'Swati'], ['su', 'Sundanese'], ['sw', 'Swahili'], ['sv', 'Swedish'], ['ty', 'Tahitian'], ['ta', 'Tamil'], ['tt', 'Tatar'], ['te', 'Telugu'], ['tg', 'Tajik'], ['tl', 'Tagalog'], ['th', 'Thai'], ['bo', 'Tibetan'], ['ti', 'Tigrinya'], ['to', 'Tonga (Tonga Islands)'], ['tn', 'Tswana'], ['ts', 'Tsonga'], ['tk', 'Turkmen'], ['tr', 'Turkish'], ['tw', 'Twi'], ['ug', 'Uighur'], ['uk', 'Ukrainian'], ['ur', 'Urdu'], ['uz', 'Uzbek'], ['ve', 'Venda'], ['vi', 'Vietnamese'], ['vo', 'Volap\xfck'], ['cy', 'Welsh'], ['wa', 'Walloon'], ['wo', 'Wolof'], ['xh', 'Xhosa'], ['yi', 'Yiddish'], ['yo', 'Yoruba'], ['za', 'Zhuang'], ['zu', 'Zulu']])),
++            ],
++        ),
++        migrations.CreateModel(
++            name='LinkedInAddToProfileConfiguration',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('change_date', models.DateTimeField(auto_now_add=True, verbose_name='Change date')),
++                ('enabled', models.BooleanField(default=False, verbose_name='Enabled')),
++                ('company_identifier', models.TextField(help_text='The company identifier for the LinkedIn Add-to-Profile button e.g 0_0dPSPyS070e0HsE9HNz_13_d11_')),
++                ('dashboard_tracking_code', models.TextField(default='', blank=True)),
++                ('trk_partner_name', models.CharField(default='', help_text="Short identifier for the LinkedIn partner used in the tracking code.  (Example: 'edx')  If no value is provided, tracking codes will not be sent to LinkedIn.", max_length=10, blank=True)),
++                ('changed_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, editable=False, to=settings.AUTH_USER_MODEL, null=True, verbose_name='Changed by')),
++            ],
++            options={
++                'ordering': ('-change_date',),
++                'abstract': False,
++            },
++        ),
++        migrations.CreateModel(
++            name='LoginFailures',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('failure_count', models.IntegerField(default=0)),
++                ('lockout_until', models.DateTimeField(null=True)),
++                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='ManualEnrollmentAudit',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('enrolled_email', models.CharField(max_length=255, db_index=True)),
++                ('time_stamp', models.DateTimeField(auto_now_add=True, null=True)),
++                ('state_transition', models.CharField(max_length=255, choices=[('from unenrolled to allowed to enroll', 'from unenrolled to allowed to enroll'), ('from allowed to enroll to enrolled', 'from allowed to enroll to enrolled'), ('from enrolled to enrolled', 'from enrolled to enrolled'), ('from enrolled to unenrolled', 'from enrolled to unenrolled'), ('from unenrolled to enrolled', 'from unenrolled to enrolled'), ('from allowed to enroll to enrolled', 'from allowed to enroll to enrolled'), ('from unenrolled to unenrolled', 'from unenrolled to unenrolled'), ('N/A', 'N/A')])),
++                ('reason', models.TextField(null=True)),
++                ('enrolled_by', models.ForeignKey(to=settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE)),
++                ('enrollment', models.ForeignKey(to='student.CourseEnrollment', null=True, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='PasswordHistory',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('password', models.CharField(max_length=128)),
++                ('time_set', models.DateTimeField(default=django.utils.timezone.now)),
++                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='PendingEmailChange',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('new_email', models.CharField(db_index=True, max_length=255, blank=True)),
++                ('activation_key', models.CharField(unique=True, max_length=32, verbose_name='activation key', db_index=True)),
++                ('user', models.OneToOneField(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='PendingNameChange',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('new_name', models.CharField(max_length=255, blank=True)),
++                ('rationale', models.CharField(max_length=1024, blank=True)),
++                ('user', models.OneToOneField(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='Registration',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('activation_key', models.CharField(unique=True, max_length=32, verbose_name='activation key', db_index=True)),
++                ('user', models.OneToOneField(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++            options={
++                'db_table': 'auth_registration',
++            },
++        ),
++        migrations.CreateModel(
++            name='UserProfile',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('name', models.CharField(db_index=True, max_length=255, blank=True)),
++                ('meta', models.TextField(blank=True)),
++                ('courseware', models.CharField(default='course.xml', max_length=255, blank=True)),
++                ('language', models.CharField(db_index=True, max_length=255, blank=True)),
++                ('location', models.CharField(db_index=True, max_length=255, blank=True)),
++                ('year_of_birth', models.IntegerField(db_index=True, null=True, blank=True)),
++                ('gender', models.CharField(blank=True, max_length=6, null=True, db_index=True, choices=[('m', 'Male'), ('f', 'Female'), ('o', 'Other/Prefer Not to Say')])),
++                ('level_of_education', models.CharField(blank=True, max_length=6, null=True, db_index=True, choices=[('p', 'Doctorate'), ('m', "Master's or professional degree"), ('b', "Bachelor's degree"), ('a', 'Associate degree'), ('hs', 'Secondary/high school'), ('jhs', 'Junior secondary/junior high/middle school'), ('el', 'Elementary/primary school'), ('none', 'No Formal Education'), ('other', 'Other Education')])),
++                ('mailing_address', models.TextField(null=True, blank=True)),
++                ('city', models.TextField(null=True, blank=True)),
++                ('country', django_countries.fields.CountryField(blank=True, max_length=2, null=True)),
++                ('goals', models.TextField(null=True, blank=True)),
++                ('allow_certificate', models.BooleanField(default=1)),
++                ('bio', models.CharField(max_length=3000, null=True, blank=True)),
++                ('profile_image_uploaded_at', models.DateTimeField(null=True)),
++                ('user', models.OneToOneField(related_name='profile', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++            options={
++                'db_table': 'auth_userprofile',
++            },
++        ),
++        migrations.CreateModel(
++            name='UserSignupSource',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('site', models.CharField(max_length=255, db_index=True)),
++                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='UserStanding',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('account_status', models.CharField(blank=True, max_length=31, choices=[('disabled', 'Account Disabled'), ('enabled', 'Account Enabled')])),
++                ('standing_last_changed_at', models.DateTimeField(auto_now=True)),
++                ('changed_by', models.ForeignKey(to=settings.AUTH_USER_MODEL, blank=True, on_delete=models.CASCADE)),
++                ('user', models.OneToOneField(related_name='standing', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.CreateModel(
++            name='UserTestGroup',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('name', models.CharField(max_length=32, db_index=True)),
++                ('description', models.TextField(blank=True)),
++                ('users', models.ManyToManyField(to=settings.AUTH_USER_MODEL, db_index=True)),
++            ],
++        ),
++        migrations.AddField(
++            model_name='languageproficiency',
++            name='user_profile',
++            field=models.ForeignKey(related_name='language_proficiencies', to='student.UserProfile', on_delete=models.CASCADE),
++        ),
++        migrations.AlterUniqueTogether(
++            name='courseenrollmentallowed',
++            unique_together={('email', 'course_id')},
++        ),
++        migrations.AlterUniqueTogether(
++            name='languageproficiency',
++            unique_together={('code', 'user_profile')},
++        ),
++        migrations.AlterUniqueTogether(
++            name='entranceexamconfiguration',
++            unique_together={('user', 'course_id')},
++        ),
++        migrations.AlterUniqueTogether(
++            name='courseenrollment',
++            unique_together={('user', 'course_id')},
++        ),
++        migrations.AlterUniqueTogether(
++            name='courseaccessrole',
++            unique_together={('user', 'org', 'course_id', 'role')},
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0001_squashed_0031_auto_20200317_1122.py b/common/djangoapps/student/migrations/0001_squashed_0031_auto_20200317_1122.py
+index fc65a5f909..7a81450c9a 100644
+--- a/common/djangoapps/student/migrations/0001_squashed_0031_auto_20200317_1122.py
++++ b/common/djangoapps/student/migrations/0001_squashed_0031_auto_20200317_1122.py
+@@ -37,6 +37,8 @@ def populate_fbeenrollmentexclusion(apps, schema_editor):
+ 
+ class Migration(migrations.Migration):
+ 
++    replaces = [('student', '0001_initial'), ('student', '0002_auto_20151208_1034'), ('student', '0003_auto_20160516_0938'), ('student', '0004_auto_20160531_1422'), ('student', '0005_auto_20160531_1653'), ('student', '0006_logoutviewconfiguration'), ('student', '0007_registrationcookieconfiguration'), ('student', '0008_auto_20161117_1209'), ('student', '0009_auto_20170111_0422'), ('student', '0010_auto_20170207_0458'), ('student', '0011_course_key_field_to_foreign_key'), ('student', '0012_sociallink'), ('student', '0013_delete_historical_enrollment_records'), ('student', '0014_courseenrollmentallowed_user'), ('student', '0015_manualenrollmentaudit_add_role'), ('student', '0016_coursenrollment_course_on_delete_do_nothing'), ('student', '0017_accountrecovery'), ('student', '0018_remove_password_history'), ('student', '0019_auto_20181221_0540'), ('student', '0020_auto_20190227_2019'), ('student', '0021_historicalcourseenrollment'), ('student', '0022_indexing_in_courseenrollment'), ('student', '0023_bulkunenrollconfiguration'), ('student', '0024_fbeenrollmentexclusion'), ('student', '0025_auto_20191101_1846'), ('student', '0026_allowedauthuser'), ('student', '0027_courseenrollment_mode_callable_default'), ('student', '0028_historicalmanualenrollmentaudit'), ('student', '0029_add_data_researcher'), ('student', '0030_userprofile_phone_number'), ('student', '0031_auto_20200317_1122')]
++    
+     initial = True
+ 
+     dependencies = [
+diff --git a/common/djangoapps/student/migrations/0002_auto_20151208_1034.py b/common/djangoapps/student/migrations/0002_auto_20151208_1034.py
+new file mode 100644
+index 0000000000..8ea695fb1e
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0002_auto_20151208_1034.py
+@@ -0,0 +1,21 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0001_initial'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='courseenrollment',
++            name='mode',
++            field=models.CharField(default='audit', max_length=100),
++        ),
++        migrations.AlterField(
++            model_name='historicalcourseenrollment',
++            name='mode',
++            field=models.CharField(default='audit', max_length=100),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0003_auto_20160516_0938.py b/common/djangoapps/student/migrations/0003_auto_20160516_0938.py
+new file mode 100644
+index 0000000000..cc97f760e9
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0003_auto_20160516_0938.py
+@@ -0,0 +1,30 @@
++import django.utils.timezone
++import model_utils.fields
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0002_auto_20151208_1034'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='UserAttribute',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, verbose_name='created', editable=False)),
++                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, verbose_name='modified', editable=False)),
++                ('name', models.CharField(help_text='Name of this user attribute.', max_length=255)),
++                ('value', models.CharField(help_text='Value of this user attribute.', max_length=255)),
++                ('user', models.ForeignKey(related_name='attributes', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
++            ],
++        ),
++        migrations.AlterUniqueTogether(
++            name='userattribute',
++            unique_together={('user', 'name')},
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0004_auto_20160531_1422.py b/common/djangoapps/student/migrations/0004_auto_20160531_1422.py
+new file mode 100644
+index 0000000000..0e253f80f2
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0004_auto_20160531_1422.py
+@@ -0,0 +1,16 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0003_auto_20160516_0938'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='userprofile',
++            name='profile_image_uploaded_at',
++            field=models.DateTimeField(null=True, blank=True),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0005_auto_20160531_1653.py b/common/djangoapps/student/migrations/0005_auto_20160531_1653.py
+new file mode 100644
+index 0000000000..08ac8b7b75
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0005_auto_20160531_1653.py
+@@ -0,0 +1,16 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0004_auto_20160531_1422'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='userattribute',
++            name='name',
++            field=models.CharField(help_text='Name of this user attribute.', max_length=255, db_index=True),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0006_logoutviewconfiguration.py b/common/djangoapps/student/migrations/0006_logoutviewconfiguration.py
+new file mode 100644
+index 0000000000..1752c6c393
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0006_logoutviewconfiguration.py
+@@ -0,0 +1,27 @@
++import django.db.models.deletion
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0005_auto_20160531_1653'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='LogoutViewConfiguration',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('change_date', models.DateTimeField(auto_now_add=True, verbose_name='Change date')),
++                ('enabled', models.BooleanField(default=False, verbose_name='Enabled')),
++                ('changed_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, editable=False, to=settings.AUTH_USER_MODEL, null=True, verbose_name='Changed by')),
++            ],
++            options={
++                'ordering': ('-change_date',),
++                'abstract': False,
++            },
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0007_registrationcookieconfiguration.py b/common/djangoapps/student/migrations/0007_registrationcookieconfiguration.py
+new file mode 100644
+index 0000000000..37fbb0b811
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0007_registrationcookieconfiguration.py
+@@ -0,0 +1,29 @@
++import django.db.models.deletion
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0006_logoutviewconfiguration'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='RegistrationCookieConfiguration',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('change_date', models.DateTimeField(auto_now_add=True, verbose_name='Change date')),
++                ('enabled', models.BooleanField(default=False, verbose_name='Enabled')),
++                ('utm_cookie_name', models.CharField(help_text='Name of the UTM cookie', max_length=255)),
++                ('affiliate_cookie_name', models.CharField(help_text='Name of the affiliate cookie', max_length=255)),
++                ('changed_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, editable=False, to=settings.AUTH_USER_MODEL, null=True, verbose_name='Changed by')),
++            ],
++            options={
++                'ordering': ('-change_date',),
++                'abstract': False,
++            },
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0008_auto_20161117_1209.py b/common/djangoapps/student/migrations/0008_auto_20161117_1209.py
+new file mode 100644
+index 0000000000..591dc99229
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0008_auto_20161117_1209.py
+@@ -0,0 +1,16 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0007_registrationcookieconfiguration'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='userprofile',
++            name='level_of_education',
++            field=models.CharField(blank=True, max_length=6, null=True, db_index=True, choices=[('p', 'Doctorate'), ('m', "Master's or professional degree"), ('b', "Bachelor's degree"), ('a', 'Associate degree'), ('hs', 'Secondary/high school'), ('jhs', 'Junior secondary/junior high/middle school'), ('el', 'Elementary/primary school'), ('none', 'No formal education'), ('other', 'Other education')]),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0009_auto_20170111_0422.py b/common/djangoapps/student/migrations/0009_auto_20170111_0422.py
+new file mode 100644
+index 0000000000..412480e94f
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0009_auto_20170111_0422.py
+@@ -0,0 +1,15 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0008_auto_20161117_1209'),
++    ]
++
++    operations = [
++        migrations.AlterModelOptions(
++            name='userprofile',
++            options={'permissions': (('can_deactivate_users', 'Can deactivate, but NOT delete users'),)},
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0010_auto_20170207_0458.py b/common/djangoapps/student/migrations/0010_auto_20170207_0458.py
+new file mode 100644
+index 0000000000..93f0038f13
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0010_auto_20170207_0458.py
+@@ -0,0 +1,27 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0009_auto_20170111_0422'),
++    ]
++
++    # This migration was to add a constraint that we lost in the Django
++    # 1.4->1.8 upgrade. But since the constraint used to be created, production
++    # would already have the constraint even before running the migration, and
++    # running the migration would fail. We needed to make the migration
++    # idempotent.  Instead of reverting this migration while we did that, we
++    # edited it to be a SQL no-op, so that people who had already applied it
++    # wouldn't end up with a ghost migration.
++
++    # It had been:
++    #
++    # migrations.RunSQL(
++    #   "create unique index email on auth_user (email);",
++    #   "drop index email on auth_user;"
++    # )
++
++    operations = [
++        # Nothing to do.
++    ]
+diff --git a/common/djangoapps/student/migrations/0011_course_key_field_to_foreign_key.py b/common/djangoapps/student/migrations/0011_course_key_field_to_foreign_key.py
+new file mode 100644
+index 0000000000..00cd4eadf0
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0011_course_key_field_to_foreign_key.py
+@@ -0,0 +1,73 @@
++import django.db.models.deletion
++from django.db import migrations, models
++from opaque_keys.edx.django.models import CourseKeyField
++
++
++# This should only be used for migrations that have be verified to have a net-neutral sql
++# change generated by Django
++class NoSqlAlterField(migrations.AlterField):
++    def database_forwards(self, app_label, schema_editor, from_state, to_state):
++        return
++
++    def database_backwards(self, app_label, schema_editor, from_state, to_state):
++        return
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('course_overviews', '0013_courseoverview_language'),
++        ('student', '0010_auto_20170207_0458'),
++    ]
++
++    operations = [
++        # Pin the db_columns to the names already in the database
++        migrations.AlterField(
++            model_name='courseenrollment',
++            name='course_id',
++            field=CourseKeyField(max_length=255, db_index=True, db_column='course_id'),
++        ),
++        migrations.AlterField(
++            model_name='historicalcourseenrollment',
++            name='course_id',
++            field=CourseKeyField(max_length=255, db_index=True, db_column='course_id'),
++        ),
++
++        # Rename the fields in Django to the new names that we want them to have
++        migrations.RenameField(
++            model_name='courseenrollment',
++            old_name='course_id',
++            new_name='course',
++        ),
++        migrations.RenameField(
++            model_name='historicalcourseenrollment',
++            old_name='course_id',
++            new_name='course',
++        ),
++
++        # Alter the fields to make them ForeignKeys (leaving off the db_constraint so
++        # that we don't create it at migration time). The db_column is left off because
++        # it defaults to ${field_name}_id, which we pinned it to up above.
++        NoSqlAlterField(
++            model_name='courseenrollment',
++            name='course',
++            field=models.ForeignKey(db_constraint=False, to='course_overviews.CourseOverview', on_delete=models.CASCADE),
++            preserve_default=True,
++        ),
++        NoSqlAlterField(
++            model_name='historicalcourseenrollment',
++            name='course',
++            field=models.ForeignKey(related_name='+', on_delete=django.db.models.deletion.DO_NOTHING, db_constraint=False, blank=True, to='course_overviews.CourseOverview', null=True),
++            preserve_default=True,
++        ),
++
++        # Set the Django-side unique-together and ordering configuration (no SQL required)
++        migrations.AlterModelOptions(
++            name='courseenrollment',
++            options={'ordering': ('user', 'course')},
++        ),
++        migrations.AlterUniqueTogether(
++            name='courseenrollment',
++            unique_together={('user', 'course')},
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0012_sociallink.py b/common/djangoapps/student/migrations/0012_sociallink.py
+new file mode 100644
+index 0000000000..4337d11e94
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0012_sociallink.py
+@@ -0,0 +1,20 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0011_course_key_field_to_foreign_key'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='SocialLink',
++            fields=[
++                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
++                ('platform', models.CharField(max_length=30)),
++                ('social_link', models.CharField(max_length=100, blank=True)),
++                ('user_profile', models.ForeignKey(related_name='social_links', to='student.UserProfile', on_delete=models.CASCADE)),
++            ],
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0013_delete_historical_enrollment_records.py b/common/djangoapps/student/migrations/0013_delete_historical_enrollment_records.py
+new file mode 100644
+index 0000000000..d4e924b721
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0013_delete_historical_enrollment_records.py
+@@ -0,0 +1,26 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0012_sociallink'),
++    ]
++
++    operations = [
++        migrations.RemoveField(
++            model_name='historicalcourseenrollment',
++            name='course',
++        ),
++        migrations.RemoveField(
++            model_name='historicalcourseenrollment',
++            name='history_user',
++        ),
++        migrations.RemoveField(
++            model_name='historicalcourseenrollment',
++            name='user',
++        ),
++        migrations.DeleteModel(
++            name='HistoricalCourseEnrollment',
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0014_courseenrollmentallowed_user.py b/common/djangoapps/student/migrations/0014_courseenrollmentallowed_user.py
+new file mode 100644
+index 0000000000..1f8b315ef4
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0014_courseenrollmentallowed_user.py
+@@ -0,0 +1,18 @@
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0013_delete_historical_enrollment_records'),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name='courseenrollmentallowed',
++            name='user',
++            field=models.ForeignKey(blank=True, to=settings.AUTH_USER_MODEL, help_text="First user which enrolled in the specified course through the specified e-mail. Once set, it won't change.", null=True, on_delete=models.CASCADE),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0015_manualenrollmentaudit_add_role.py b/common/djangoapps/student/migrations/0015_manualenrollmentaudit_add_role.py
+new file mode 100644
+index 0000000000..a0d523c448
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0015_manualenrollmentaudit_add_role.py
+@@ -0,0 +1,16 @@
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0014_courseenrollmentallowed_user'),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name='manualenrollmentaudit',
++            name='role',
++            field=models.CharField(max_length=64, null=True, blank=True),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0016_coursenrollment_course_on_delete_do_nothing.py b/common/djangoapps/student/migrations/0016_coursenrollment_course_on_delete_do_nothing.py
+new file mode 100644
+index 0000000000..1d1c39b667
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0016_coursenrollment_course_on_delete_do_nothing.py
+@@ -0,0 +1,20 @@
++# Generated by Django 1.11.14 on 2018-07-27 01:44
++
++
++import django.db.models.deletion
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0015_manualenrollmentaudit_add_role'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='courseenrollment',
++            name='course',
++            field=models.ForeignKey(db_constraint=False, on_delete=django.db.models.deletion.DO_NOTHING, to='course_overviews.CourseOverview'),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0017_accountrecovery.py b/common/djangoapps/student/migrations/0017_accountrecovery.py
+new file mode 100644
+index 0000000000..8347d04357
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0017_accountrecovery.py
+@@ -0,0 +1,28 @@
++# Generated by Django 1.11.16 on 2018-12-10 12:15
++
++
++import django.db.models.deletion
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0016_coursenrollment_course_on_delete_do_nothing'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='AccountRecovery',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('secondary_email', models.EmailField(help_text='Secondary email address to recover linked account.', max_length=254, unique=True, verbose_name='Secondary email address')),
++                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='account_recovery', to=settings.AUTH_USER_MODEL)),
++            ],
++            options={
++                'db_table': 'auth_accountrecovery',
++            },
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0018_remove_password_history.py b/common/djangoapps/student/migrations/0018_remove_password_history.py
+new file mode 100644
+index 0000000000..45e8af5a08
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0018_remove_password_history.py
+@@ -0,0 +1,21 @@
++# Generated by Django 1.11.16 on 2018-12-19 14:30
++
++
++from django.db import migrations
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0017_accountrecovery'),
++    ]
++
++    operations = [
++        migrations.RemoveField(
++            model_name='passwordhistory',
++            name='user',
++        ),
++        migrations.DeleteModel(
++            name='PasswordHistory',
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0019_auto_20181221_0540.py b/common/djangoapps/student/migrations/0019_auto_20181221_0540.py
+new file mode 100644
+index 0000000000..4ee9c71e8a
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0019_auto_20181221_0540.py
+@@ -0,0 +1,34 @@
++# Generated by Django 1.11.16 on 2018-12-21 10:40
++
++
++import django.db.models.deletion
++from django.conf import settings
++from django.db import migrations, models
++
++import openedx.core.djangolib.model_mixins
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0018_remove_password_history'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='PendingSecondaryEmailChange',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('new_secondary_email', models.CharField(blank=True, db_index=True, max_length=255)),
++                ('activation_key', models.CharField(db_index=True, max_length=32, unique=True, verbose_name='activation key')),
++                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
++            ],
++            bases=(openedx.core.djangolib.model_mixins.DeletableByUserValue, models.Model),
++        ),
++        migrations.AddField(
++            model_name='accountrecovery',
++            name='is_active',
++            field=models.BooleanField(default=False),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0020_auto_20190227_2019.py b/common/djangoapps/student/migrations/0020_auto_20190227_2019.py
+new file mode 100644
+index 0000000000..94fcb996ee
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0020_auto_20190227_2019.py
+@@ -0,0 +1,18 @@
++# Generated by Django 1.11.20 on 2019-02-27 20:19
++
++
++from django.db import migrations
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0019_auto_20181221_0540'),
++    ]
++
++    operations = [
++        migrations.AlterModelOptions(
++            name='loginfailures',
++            options={'verbose_name': 'Login Failure', 'verbose_name_plural': 'Login Failures'},
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0021_historicalcourseenrollment.py b/common/djangoapps/student/migrations/0021_historicalcourseenrollment.py
+new file mode 100644
+index 0000000000..2c63f9cea3
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0021_historicalcourseenrollment.py
+@@ -0,0 +1,44 @@
++# Generated by Django 1.11.20 on 2019-04-25 20:18
++
++
++import uuid
++
++import django.db.models.deletion
++import simple_history.models
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('course_overviews', '0014_courseoverview_certificate_available_date'),
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0020_auto_20190227_2019'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='HistoricalCourseEnrollment',
++            fields=[
++                ('id', models.IntegerField(auto_created=True, blank=True, db_index=True, verbose_name='ID')),
++                ('created', models.DateTimeField(blank=True, db_index=True, editable=False, null=True)),
++                ('is_active', models.BooleanField(default=True)),
++                ('mode', models.CharField(default='audit', max_length=100)),
++                ('history_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
++                ('history_date', models.DateTimeField()),
++                ('history_change_reason', models.CharField(max_length=100, null=True)),
++                ('history_type', models.CharField(choices=[('+', 'Created'), ('~', 'Changed'), ('-', 'Deleted')], max_length=1)),
++                ('course', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='course_overviews.CourseOverview')),
++                ('history_user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
++                ('user', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to=settings.AUTH_USER_MODEL)),
++            ],
++            options={
++                'ordering': ('-history_date', '-history_id'),
++                'db_table': 'student_courseenrollment_history',
++                'verbose_name': 'historical course enrollment',
++                'get_latest_by': 'history_date',
++            },
++            bases=(simple_history.models.HistoricalChanges, models.Model),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0022_indexing_in_courseenrollment.py b/common/djangoapps/student/migrations/0022_indexing_in_courseenrollment.py
+new file mode 100644
+index 0000000000..634725e153
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0022_indexing_in_courseenrollment.py
+@@ -0,0 +1,18 @@
++# Generated by Django 1.11.20 on 2019-06-24 19:01
++
++
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0021_historicalcourseenrollment'),
++    ]
++
++    operations = [
++        migrations.AddIndex(
++            model_name='courseenrollment',
++            index=models.Index(fields=['user', '-created'], name='student_cou_user_id_b19dcd_idx'),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0023_bulkunenrollconfiguration.py b/common/djangoapps/student/migrations/0023_bulkunenrollconfiguration.py
+new file mode 100644
+index 0000000000..9ff534d159
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0023_bulkunenrollconfiguration.py
+@@ -0,0 +1,32 @@
++# Generated by Django 1.11.24 on 2019-09-19 19:51
++
++
++import django.core.validators
++import django.db.models.deletion
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0022_indexing_in_courseenrollment'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='BulkUnenrollConfiguration',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('change_date', models.DateTimeField(auto_now_add=True, verbose_name='Change date')),
++                ('enabled', models.BooleanField(default=False, verbose_name='Enabled')),
++                ('csv_file', models.FileField(help_text='It expect that the data will be provided in a csv file format with                     first row being the header and columns will be as follows:                     user_id, username, email, course_id, is_verified, verification_date', upload_to='', validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['csv'])])),
++                ('changed_by', models.ForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL, verbose_name='Changed by')),
++            ],
++            options={
++                'ordering': ('-change_date',),
++                'abstract': False,
++            },
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0024_fbeenrollmentexclusion.py b/common/djangoapps/student/migrations/0024_fbeenrollmentexclusion.py
+new file mode 100644
+index 0000000000..72316d8e4a
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0024_fbeenrollmentexclusion.py
+@@ -0,0 +1,22 @@
++# Generated by Django 1.11.25 on 2019-11-01 15:56
++
++
++import django.db.models.deletion
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0023_bulkunenrollconfiguration'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='FBEEnrollmentExclusion',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('enrollment', models.OneToOneField(on_delete=django.db.models.deletion.DO_NOTHING, to='student.CourseEnrollment')),
++            ],
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0025_auto_20191101_1846.py b/common/djangoapps/student/migrations/0025_auto_20191101_1846.py
+new file mode 100644
+index 0000000000..d3dfb8dd21
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0025_auto_20191101_1846.py
+@@ -0,0 +1,33 @@
++# Generated by Django 1.11.25 on 2019-11-01 18:46
++
++
++from django.db import migrations
++
++from common.djangoapps.student.models import CourseEnrollment, FBEEnrollmentExclusion
++from lms.djangoapps.experiments.models import ExperimentData
++from openedx.features.course_duration_limits.config import EXPERIMENT_DATA_HOLDBACK_KEY, EXPERIMENT_ID
++
++
++def populate_fbeenrollmentexclusion(apps, schema_editor):
++    holdback_entries = ExperimentData.objects.filter(
++        experiment_id=EXPERIMENT_ID,
++        key=EXPERIMENT_DATA_HOLDBACK_KEY,
++        value='True'
++    )
++    for holdback_entry in holdback_entries:
++        enrollments = [FBEEnrollmentExclusion(enrollment=enrollment)
++                       for enrollment in CourseEnrollment.objects.filter(user=holdback_entry.user)]
++        if enrollments:
++            FBEEnrollmentExclusion.objects.bulk_create(enrollments)
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0024_fbeenrollmentexclusion'),
++        ('experiments', '0001_initial'),
++    ]
++
++    operations = [
++        migrations.RunPython(populate_fbeenrollmentexclusion, reverse_code=migrations.RunPython.noop),
++    ]
+diff --git a/common/djangoapps/student/migrations/0026_allowedauthuser.py b/common/djangoapps/student/migrations/0026_allowedauthuser.py
+new file mode 100644
+index 0000000000..7d08c1ab23
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0026_allowedauthuser.py
+@@ -0,0 +1,31 @@
++# Generated by Django 1.11.26 on 2019-11-14 14:12
++
++
++import django.db.models.deletion
++import django.utils.timezone
++import model_utils.fields
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('sites', '0002_alter_domain_unique'),
++        ('student', '0025_auto_20191101_1846'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='AllowedAuthUser',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, editable=False, verbose_name='created')),
++                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, editable=False, verbose_name='modified')),
++                ('email', models.EmailField(help_text="An employee (a user whose email has current site's domain name) whose email exists in this model, can be able to login from login screen through email and password. And if any employee's email doesn't exist in this model then that employee can login via third party authentication backend only.", max_length=254, unique=True)),
++                ('site', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='allowed_auth_users', to='sites.Site')),
++            ],
++            options={
++                'abstract': False,
++            },
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0027_courseenrollment_mode_callable_default.py b/common/djangoapps/student/migrations/0027_courseenrollment_mode_callable_default.py
+new file mode 100644
+index 0000000000..b83e4277d0
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0027_courseenrollment_mode_callable_default.py
+@@ -0,0 +1,26 @@
++# Generated by Django 1.11.22 on 2019-07-19 13:06
++
++
++from django.db import migrations, models
++
++from common.djangoapps.course_modes import models as course_modes_models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0026_allowedauthuser'),
++    ]
++
++    operations = [
++        migrations.AlterField(
++            model_name='courseenrollment',
++            name='mode',
++            field=models.CharField(default=course_modes_models.CourseMode.get_default_mode_slug, max_length=100),
++        ),
++        migrations.AlterField(
++            model_name='historicalcourseenrollment',
++            name='mode',
++            field=models.CharField(default=course_modes_models.CourseMode.get_default_mode_slug, max_length=100),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0028_historicalmanualenrollmentaudit.py b/common/djangoapps/student/migrations/0028_historicalmanualenrollmentaudit.py
+new file mode 100644
+index 0000000000..9efaed2703
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0028_historicalmanualenrollmentaudit.py
+@@ -0,0 +1,41 @@
++# Generated by Django 1.11.27 on 2019-12-27 20:44
++
++
++import django.db.models.deletion
++import simple_history.models
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0027_courseenrollment_mode_callable_default'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='HistoricalManualEnrollmentAudit',
++            fields=[
++                ('id', models.IntegerField(auto_created=True, blank=True, db_index=True, verbose_name='ID')),
++                ('enrolled_email', models.CharField(db_index=True, max_length=255)),
++                ('time_stamp', models.DateTimeField(blank=True, editable=False, null=True)),
++                ('state_transition', models.CharField(choices=[('from unenrolled to allowed to enroll', 'from unenrolled to allowed to enroll'), ('from allowed to enroll to enrolled', 'from allowed to enroll to enrolled'), ('from enrolled to enrolled', 'from enrolled to enrolled'), ('from enrolled to unenrolled', 'from enrolled to unenrolled'), ('from unenrolled to enrolled', 'from unenrolled to enrolled'), ('from allowed to enroll to enrolled', 'from allowed to enroll to enrolled'), ('from unenrolled to unenrolled', 'from unenrolled to unenrolled'), ('N/A', 'N/A')], max_length=255)),
++                ('reason', models.TextField(null=True)),
++                ('role', models.CharField(blank=True, max_length=64, null=True)),
++                ('history_id', models.AutoField(primary_key=True, serialize=False)),
++                ('history_date', models.DateTimeField()),
++                ('history_change_reason', models.CharField(max_length=100, null=True)),
++                ('history_type', models.CharField(choices=[('+', 'Created'), ('~', 'Changed'), ('-', 'Deleted')], max_length=1)),
++                ('enrolled_by', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to=settings.AUTH_USER_MODEL)),
++                ('enrollment', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='student.CourseEnrollment')),
++                ('history_user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
++            ],
++            options={
++                'verbose_name': 'historical manual enrollment audit',
++                'ordering': ('-history_date', '-history_id'),
++                'get_latest_by': 'history_date',
++            },
++            bases=(simple_history.models.HistoricalChanges, models.Model),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0029_add_data_researcher.py b/common/djangoapps/student/migrations/0029_add_data_researcher.py
+new file mode 100644
+index 0000000000..2f5f7fc87a
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0029_add_data_researcher.py
+@@ -0,0 +1,30 @@
++# Generated by Django 1.11.27 on 2020-01-27 19:02
++
++
++from django.db import migrations
++
++from common.djangoapps.student.models import CourseAccessRole
++
++
++def add_data_researcher(apps, schema_editor):
++    """
++    Add a `data_researcher` role for everyone who is currently `staff` or `instructor`.
++    """
++    for role in CourseAccessRole.objects.filter(role__in=('staff', 'instructor')):
++        new_role, created = CourseAccessRole.objects.get_or_create(
++            user=role.user,
++            org=role.org,
++            course_id=role.course_id,
++            role='data_researcher'
++        )
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0028_historicalmanualenrollmentaudit'),
++    ]
++
++    operations = [
++        migrations.RunPython(add_data_researcher, reverse_code=migrations.RunPython.noop),
++    ]
+diff --git a/common/djangoapps/student/migrations/0030_userprofile_phone_number.py b/common/djangoapps/student/migrations/0030_userprofile_phone_number.py
+new file mode 100644
+index 0000000000..9b6662dfe2
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0030_userprofile_phone_number.py
+@@ -0,0 +1,20 @@
++# Generated by Django 1.11.28 on 2020-02-18 18:36
++
++
++import django.core.validators
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    dependencies = [
++        ('student', '0029_add_data_researcher'),
++    ]
++
++    operations = [
++        migrations.AddField(
++            model_name='userprofile',
++            name='phone_number',
++            field=models.CharField(blank=True, max_length=50, null=True, validators=[django.core.validators.RegexValidator(message='Phone number can only contain numbers.', regex='^\\+?1?\\d*$')]),
++        ),
++    ]
+diff --git a/common/djangoapps/student/migrations/0031_auto_20200317_1122.py b/common/djangoapps/student/migrations/0031_auto_20200317_1122.py
+new file mode 100644
+index 0000000000..b09eb4aa2a
+--- /dev/null
++++ b/common/djangoapps/student/migrations/0031_auto_20200317_1122.py
+@@ -0,0 +1,30 @@
++# Generated by Django 1.11.29 on 2020-03-17 11:22
++
++
++import django.db.models.deletion
++from django.conf import settings
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++    dependencies = [
++        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++        ('student', '0030_userprofile_phone_number'),
++    ]
++
++    operations = [
++        migrations.CreateModel(
++            name='AccountRecoveryConfiguration',
++            fields=[
++                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
++                ('change_date', models.DateTimeField(auto_now_add=True, verbose_name='Change date')),
++                ('enabled', models.BooleanField(default=False, verbose_name='Enabled')),
++                ('csv_file', models.FileField(help_text='It expect that the data will be provided in a csv file format with                     first row being the header and columns will be as follows:                     username, email, new_email', upload_to='', validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['csv'])])),
++                ('changed_by', models.ForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL, verbose_name='Changed by')),
++            ],
++            options={
++                'ordering': ('-change_date',),
++                'abstract': False,
++            },
++        )
++    ]
+-- 
+2.25.1
+

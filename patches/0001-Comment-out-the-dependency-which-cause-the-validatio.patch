@@ -1,0 +1,32 @@
+From 00d5cd0f2e5ae20206237dcb4b6259b90b0d64f2 Mon Sep 17 00:00:00 2001
+From: hdubey09 <hdubey@csod.com>
+Date: Thu, 11 Jan 2024 11:18:33 +0530
+Subject: [PATCH 1/2] Comment out the dependency which cause the validation
+ error of the migration file 0001_data__add_ecommerce_service_user
+
+---
+ .../migrations/0001_data__add_ecommerce_service_user.py   | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/lms/djangoapps/commerce/migrations/0001_data__add_ecommerce_service_user.py b/lms/djangoapps/commerce/migrations/0001_data__add_ecommerce_service_user.py
+index bc83ce2288..bb74823b88 100644
+--- a/lms/djangoapps/commerce/migrations/0001_data__add_ecommerce_service_user.py
++++ b/lms/djangoapps/commerce/migrations/0001_data__add_ecommerce_service_user.py
+@@ -20,10 +20,10 @@ def backwards(apps, schema_editor):
+ 
+ class Migration(migrations.Migration):
+ 
+-    dependencies = [
+-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+-        ('user_api', '0002_retirementstate_userretirementstatus'),
+-    ]
++    # dependencies = [
++    #     migrations.swappable_dependency(settings.AUTH_USER_MODEL),
++    #     ('user_api', '0002_retirementstate_userretirementstatus'),
++    # ]
+ 
+     operations = [
+         migrations.RunPython(forwards, backwards),
+-- 
+2.25.1
+
