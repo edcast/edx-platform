@@ -85,6 +85,10 @@ LMS_ROOT_URL = 'https://localhost:18000'
 LMS_INTERNAL_ROOT_URL = LMS_ROOT_URL
 LMS_ENROLLMENT_API_PATH = "/api/enrollment/v1/"
 
+
+LMS_TEST_ENV = ('lms' in sys.argv) and ('test' in sys.argv)
+CMS_TEST_ENV = ('cms' in sys.argv) and ('test' in sys.argv)
+
 # List of logout URIs for each IDA that the learner should be logged out of when they logout of the LMS. Only applies to
 # IDA for which the social auth flow uses DOT (Django OAuth Toolkit).
 IDA_LOGOUT_URI_LIST = []
@@ -1321,6 +1325,7 @@ DEFAULT_TEMPLATE_ENGINE_DIRS = DEFAULT_TEMPLATE_ENGINE['DIRS'][:]
 ###############################################################################################
 
 AUTHENTICATION_BACKENDS = [
+    'common.djangoapps.cm_plugin.backends.EmailAuthBackend',
     'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.AllowAllUsersModelBackend',
     'bridgekeeper.backends.RulePermissionBackend',
@@ -2153,7 +2158,7 @@ MIDDLEWARE = [
     # Instead of AuthenticationMiddleware, we use a cached backed version
     #'django.contrib.auth.middleware.AuthenticationMiddleware',
     'openedx.core.djangoapps.cache_toolbox.middleware.CacheBackedAuthenticationMiddleware',
-
+    'common.djangoapps.cm_plugin.middleware.ExternalAuthMiddleware',
     'common.djangoapps.student.middleware.UserStandingMiddleware',
     'openedx.core.djangoapps.contentserver.middleware.StaticContentServer',
 
@@ -3265,6 +3270,9 @@ INSTALLED_APPS = [
     # MFE API
     'lms.djangoapps.mfe_config_api',
 ]
+
+if LMS_TEST_ENV:
+    INSTALLED_APPS += ('cm_plugin',)
 
 ######################### CSRF #########################################
 
