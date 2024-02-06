@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
                 ('user_email', models.EmailField(default=None, max_length=75)),
                 ('unit_name', models.CharField(max_length=255)),
                 ('score', models.FloatField(null=True)),
-                ('cm_gradebook', models.ForeignKey(to='cm_plugin.CmGradebook')),
+                ('cm_gradebook', models.ForeignKey(to='cm_plugin.CmGradebook', on_delete=models.CASCADE)),
                 ('created_at', models.DateTimeField(auto_now_add=True, blank=True)),
                 ('updated_at', models.DateTimeField(auto_now=True, blank=True)),
             ],
