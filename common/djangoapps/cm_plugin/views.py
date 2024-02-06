@@ -3,6 +3,11 @@
 # from xmodule.course_module import CourseDescriptor
 # from courseware.courses import get_course
 from django.http import HttpResponseNotFound, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from common.djangoapps.util.json_request import expect_json
+from openedx.core.djangoapps.user_authn.views.registration_form import AccountCreationForm
+from common.djangoapps.student.helpers import do_create_account, AccountValidationError
+from django.contrib.auth.models import User
 # from contentstore.views.course import _create_or_rerun_course
 # from django.views.decorators.csrf import csrf_exempt
 # from util.json_request import expect_json
@@ -25,7 +30,7 @@ import json
 # from edxmako.shortcuts import render_to_response
 # from util.json_request import JsonResponse
 from .healthcheck import check_services
-# from .token import validate_token
+from .token import validate_token
 # import re
 # from urlparse import urlparse
 # import os
@@ -148,49 +153,49 @@ from .healthcheck import check_services
 #         return HttpResponse(content=json.dumps({}), status=404, content_type='application/json')
 
 
-# """
-# POST request from cm to create new user.
-# Returns unique id (email, username)
-# """
-# @csrf_exempt
-# @expect_json
-# def cm_create_new_user(request):
-#     response_format = request.GET.get('format','html')
-#     if response_format == 'json' or 'application/json' in request.META.get('HTTP/ACCEPT','application/json'):
-#         if request.method == 'POST':
-#             if validate_token(request.body, request) is False:
-#                 return HttpResponse('Unauthorized', status=401)
-#             try:
-#                 form = AccountCreationForm(
-#                         data=request.json,
-#                         tos_required=False
-#                     )
-#                 ret = _do_create_account(form)
-#                 if isinstance(ret, HttpResponse):
-#                     response_body = json.loads(ret.content)
-#                     content = {'errors':response_body['value']}
-#                     status_code = 422
-#                 elif isinstance(ret, tuple):
-#                     created_user = User.objects.get(username=ret[0].username)
-#                     created_user.is_active = True
-#                     created_user.save()
-#                     content = {'id':ret[0].email, 'username': ret[0].username}
-#                     status_code = 200
-#             except AccountValidationError:
-#                     user = User.objects.get(username=request.json.get('username'))
-#                     content = {'id': user.email, 'username': user.username}
-#                     status_code = 200
-#             except:
-#                     content = {'errors':'Bad Request'}
-#                     status_code = 400
+"""
+POST request from cm to create new user.
+Returns unique id (email, username)
+"""
+@csrf_exempt
+@expect_json
+def cm_create_new_user(request):
+    response_format = request.GET.get('format','html')
+    if response_format == 'json' or 'application/json' in request.META.get('HTTP/ACCEPT','application/json'):
+        if request.method == 'POST':
+            if validate_token(request.body, request) is False:
+                return HttpResponse('Unauthorized', status=401)
+            try:
+                form = AccountCreationForm(
+                        data=request.json,
+                        tos_required=False
+                    )
+                ret = do_create_account(form)
+                if isinstance(ret, HttpResponse):
+                    response_body = json.loads(ret.content)
+                    content = {'errors':response_body['value']}
+                    status_code = 422
+                elif isinstance(ret, tuple):
+                    created_user = User.objects.get(username=ret[0].username)
+                    created_user.is_active = True
+                    created_user.save()
+                    content = {'id':ret[0].email, 'username': ret[0].username}
+                    status_code = 200
+            except AccountValidationError:
+                    user = User.objects.get(username=request.json.get('username'))
+                    content = {'id': user.email, 'username': user.username}
+                    status_code = 200
+            except:
+                    content = {'errors':'Bad Request'}
+                    status_code = 400
 
-#             return HttpResponse(content = json.dumps(content), \
-#                     content_type = 'application/json', \
-#                     status = status_code)
-#         else:
-#             return HttpResponse(content=json.dumps({}), status=404, content_type='application/json')
-#     else:
-#         return HttpResponse(content=json.dumps({}), status=404, content_type='application/json')
+            return HttpResponse(content = json.dumps(content), \
+                    content_type = 'application/json', \
+                    status = status_code)
+        else:
+            return HttpResponse(content=json.dumps({}), status=404, content_type='application/json')
+    else:
+        return HttpResponse(content=json.dumps({}), status=404, content_type='application/json')
 
 # def set_cookie(request):
 #     referrer = request.GET.get('return_to_url')
