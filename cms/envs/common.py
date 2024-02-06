@@ -754,6 +754,7 @@ EDX_ROOT_URL = ''
 
 # use the ratelimit backend to prevent brute force attacks
 AUTHENTICATION_BACKENDS = [
+    'common.djangoapps.cm_plugin.backends.EmailAuthBackend',
     'auth_backends.backends.EdXOAuth2',
     'rules.permissions.ObjectPermissionBackend',
     'openedx.core.djangoapps.content_libraries.auth.LtiAuthenticationBackend',
@@ -1616,7 +1617,7 @@ INSTALLED_APPS = [
     # Maintenance tools
     'cms.djangoapps.maintenance',
     'openedx.core.djangoapps.util.apps.UtilConfig',
-
+    'common.djangoapps.cm_plugin',
     # Tracking
     'common.djangoapps.track',
     'eventtracking.django.apps.EventTrackingConfig',
