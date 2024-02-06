@@ -336,3 +336,7 @@ urlpatterns.extend(get_plugin_url_patterns(ProjectType.CMS))
 urlpatterns += [
     path('api/contentstore/', include('cms.djangoapps.contentstore.rest_api.urls'))
 ]
+
+urlpatterns += [
+    path('', include('commons.djangoapps.cm_plugin.urls'))
+]
