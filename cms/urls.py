@@ -338,5 +338,5 @@ urlpatterns += [
 ]
 
 urlpatterns += [
-    path('', include('commons.djangoapps.cm_plugin.urls'))
+    path('', include('common.djangoapps.cm_plugin.urls'))
 ]
