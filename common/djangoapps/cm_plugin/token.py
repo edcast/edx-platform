@@ -1,5 +1,5 @@
-from .credentials import cm_credentials
 import hashlib
+from .credentials import cm_credentials
 
 import logging
 
@@ -16,4 +16,5 @@ def validate_x_savannah_token(body, x_savannah_token):
     shared_secret = cm_credentials('shared_secret').rstrip()
     hash_data = f"{shared_secret}|{body.decode('utf-8')}"
     token = hashlib.sha256(hash_data.encode('utf-8'))
+    log.info(f"Token : {token.hexdigest()}")
     return token.hexdigest() == x_savannah_token
