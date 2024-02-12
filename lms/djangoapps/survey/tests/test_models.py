@@ -30,7 +30,7 @@ class SurveyModelsTests(TestCase):
         self.client = Client()
 
         # Create two accounts
-        self.password = 'Password1234'
+        self.password = 'abc'
         self.student = UserFactory.create(
             username='student', email='student@test.com', password=self.password,
         )

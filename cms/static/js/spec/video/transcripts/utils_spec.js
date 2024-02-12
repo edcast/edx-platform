@@ -6,7 +6,6 @@ define(
     ],
     function($, _, Utils, _str) {
         'use strict';
-
         describe('Transcripts.Utils', function() {
             var videoId = 'OEoXaMPEzfM',
                 ytLinksList = (function(id) {
@@ -219,7 +218,6 @@ define(
             });
 
             it('Method: getYoutubeLink', function() {
-                // eslint-disable-next-line no-shadow
                 var videoId = 'video_id',
                     result = Utils.getYoutubeLink(videoId),
                     expectedResult = 'http://youtu.be/' + videoId;
@@ -263,7 +261,6 @@ define(
 
                 describe('Wrong arguments ', function() {
                     it('youtube videoId is wrong', function() {
-                        // eslint-disable-next-line no-shadow
                         var videoId = 'wrong_id',
                             link = 'http://youtu.be/' + videoId,
                             result = Utils.parseLink(link);

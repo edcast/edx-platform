@@ -9,10 +9,9 @@ else:
 %>
 </%def>
 <%!
-from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from cms.djangoapps.contentstore.helpers import xblock_studio_url, xblock_type_display_name
+from cms.djangoapps.contentstore.views.helpers import xblock_studio_url, xblock_type_display_name
 from openedx.core.djangolib.js_utils import (
     dump_js_escaped_json, js_escaped_string
 )
@@ -49,61 +48,29 @@ from openedx.core.djangolib.markup import HTML, Text
             {
                 isUnitPage: ${is_unit_page | n, dump_js_escaped_json},
                 canEdit: true,
-                outlineURL: "${outline_url | n, js_escaped_string}",
-                clipboardData: ${user_clipboard | n, dump_js_escaped_json},
+                outlineURL: "${outline_url | n, js_escaped_string}"
             }
         );
-
-        require(["js/models/xblock_info", "js/views/xblock", "js/views/utils/xblock_utils", "common/js/components/utils/view_utils", "gettext"], function (XBlockInfo, XBlockView, XBlockUtils, ViewUtils, gettext) {
+        require(["js/models/xblock_info", "js/views/xblock", "js/views/utils/xblock_utils", "common/js/components/utils/view_utils"], function (XBlockInfo, XBlockView, XBlockUtils, ViewUtils) {
             var model = new XBlockInfo({
                 id: '${subsection.location|n, decode.utf8}'
             });
             var xblockView = new XBlockView({
                 model: model,
                 el: $('#sequence-nav'),
-                view: 'author_view?position=${position|n, decode.utf8}&next_url=${next_url|n, decode.utf8}&prev_url=${prev_url|n, decode.utf8}',
-                clipboardData: ${user_clipboard | n, dump_js_escaped_json},
+                view: 'author_view?position=${position|n, decode.utf8}&next_url=${next_url|n, decode.utf8}&prev_url=${prev_url|n, decode.utf8}'
             });
-
             xblockView.xblockReady = function() {
-
-                var toggleCaretButton = function(clipboardData) {
-                    if (clipboardData && clipboardData.content && clipboardData.source_usage_key.includes("vertical")) {
-                        $('.dropdown-toggle-button').show();
-                    } else {
-                        $('.dropdown-toggle-button').hide();
-                        $('.dropdown-options').hide();
-                    }
-                };
-                this.clipboardBroadcastChannel = new BroadcastChannel("studio_clipboard_channel");
-                this.clipboardBroadcastChannel.onmessage = (event) => {
-                    toggleCaretButton(event.data);
-                };
-                toggleCaretButton(this.options.clipboardData);
-
-                $('#new-unit-button').on('click', function(event) {
-                    event.preventDefault();
-                    XBlockUtils.addXBlock($(this)).done(function(locator) {
+                $('.seq_new_button').click(function(evt) {
+                    evt.preventDefault();
+                    XBlockUtils.addXBlock($(evt.target)).done(function(locator) {
                         ViewUtils.redirect('/container/' + locator + '?action=new');
+                        return false;
                     });
+                    return false;
                 });
 
-                $('.custom-dropdown .dropdown-toggle-button').on('click', function(event) {
-                    event.stopPropagation(); // Prevent the event from closing immediately when we open it
-                    $(this).next('.dropdown-options').slideToggle('fast'); // This toggles the dropdown visibility
-                    var isExpanded = $(this).attr('aria-expanded') === 'true';
-                    $(this).attr('aria-expanded', !isExpanded);
-                });
-
-                $('.seq_paste_unit').on('click', function(event) {
-                    event.preventDefault();
-                    $('.dropdown-options').hide();
-                    XBlockUtils.pasteXBlock($(this)).done(function(data) {
-                        ViewUtils.redirect('/container/' + data.locator + '?action=new');
-                    });
-                });
             };
-
             xblockView.render();
         });
     </%static:webpack>
@@ -166,6 +133,7 @@ from openedx.core.djangolib.markup import HTML, Text
             <ul>
                 ## Hide the sequence navigation when we've browsed into a child of the unit, e.g. showing the child blocks of a problem-builder xblock
                 % if is_unit_page:
+                    <%doc>
                     <li class="action-item action-view nav-item">
                         <a href="${published_preview_link}" class="button button-view action-button is-disabled" aria-disabled="true" rel="external" title="${_('Open the courseware in the LMS')}">
                             <span class="action-button-text">${_("View Live Version")}</span>
@@ -176,6 +144,7 @@ from openedx.core.djangolib.markup import HTML, Text
                             <span class="action-button-text">${_("Preview")}</span>
                         </a>
                     </li>
+                    </%doc>
                 % else:
                     <li class="action-item action-edit nav-item">
                         <a href="#" class="button button-edit action-button edit-button">
@@ -183,14 +152,6 @@ from openedx.core.djangolib.markup import HTML, Text
                             <span class="action-button-text">${_("Edit")}</span>
                         </a>
                     </li>
-                    % if is_collapsible:
-                        <li class="action-item action-toggle-preview nav-item">
-                            <a href="#" class="button button-toggle-preview action-button">
-                                <span class="icon fa fa-arrow-up" aria-hidden="true"></span>
-                                <span class="action-button-text preview-text">${_("Collapse All")}</span>
-                            </a>
-                        </li>
-                    % endif
                 % endif
             </ul>
         </nav>
@@ -203,12 +164,10 @@ from openedx.core.djangolib.markup import HTML, Text
 <div class="wrapper-content wrapper">
     <div class="inner-wrapper">
         <section class="content-area">
-            <article class="content-primary ${'content-primary-fullwidth' if is_fullwidth_content else ''}">
+
+            <article class="content-primary">
                 <div class="container-message wrapper-message"></div>
-                <%
-                    assets_url = reverse('assets_handler', kwargs={'course_key_string': str(xblock_locator.course_key)})
-                %>
-                <section class="wrapper-xblock level-page is-hidden studio-xblock-wrapper" data-locator="${xblock_locator}" data-course-key="${xblock_locator.course_key}" data-course-assets="${assets_url}">
+                <section class="wrapper-xblock level-page is-hidden studio-xblock-wrapper" data-locator="${xblock_locator}" data-course-key="${xblock_locator.course_key}">
                 </section>
                 <div class="ui-loading">
                     <p><span class="spin"><span class="icon fa fa-refresh" aria-hidden="true"></span></span> <span class="copy">${_("Loading")}</span></p>
@@ -246,15 +205,10 @@ from openedx.core.djangolib.markup import HTML, Text
                             <h5 class="title">${_("Location ID")}</h5>
                             <p class="unit-id">
                                 <span class="unit-id-value" id="unit-location-id-input">${unit.location.block_id}</span>
-                                <span class="tip"><span class="sr">Tip: </span>${Text(_('To create a link to this unit from an HTML component in this course, enter {unit_link} as the URL value.')).format(
-                                    unit_link="/jump_to_id/{}".format(unit.location.block_id)
-                                )}</span>
+                                <span class="tip"><span class="sr">Tip: </span>${Text(_('To create a link to this unit from an HTML component in this course, enter "/jump_to_id/<location ID>" as the URL value.'))}</span>
                             </p>
                         </div>
-                    </div>
-                    % if show_unit_tags:
-                        <div class="unit-tags is-hidden"></div>
-                    % endif
+                     </div>
                 % endif
             </aside>
         </section>
@@ -279,7 +233,4 @@ from openedx.core.djangolib.markup import HTML, Text
         </div>
     </div>
 </div>
-
-<div id="manage-tags-drawer" class="drawer"></div>
-<div class="drawer-cover"></div>
 </%block>

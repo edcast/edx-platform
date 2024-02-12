@@ -13,7 +13,6 @@
  * ~ Chinese Proverb
  */
 
-// eslint-disable-next-line no-shadow-restricted-names
 window.ImageInput = (function($, undefined) {
     var ImageInput = ImageInputConstructor;
 
@@ -34,10 +33,10 @@ window.ImageInput = (function($, undefined) {
 
     function clickHandler(event) {
         var offset = this.el.offset(),
-            posX = event.offsetX
-                ? event.offsetX : event.pageX - offset.left,
-            posY = event.offsetY
-                ? event.offsetY : event.pageY - offset.top,
+            posX = event.offsetX ?
+                event.offsetX : event.pageX - offset.left,
+            posY = event.offsetY ?
+                event.offsetY : event.pageY - offset.top,
 
             // To reduce differences between values returned by different kinds
             // of browsers, we round `posX` and `posY`.

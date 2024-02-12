@@ -58,7 +58,7 @@ class AuthAndScopesTestMixin:
             self.student.
     """
     default_scopes = None
-    user_password = 'Password1234'
+    user_password = 'test'
 
     def setUp(self):
         super().setUp()

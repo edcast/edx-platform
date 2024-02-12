@@ -19,7 +19,6 @@
                     mode = null,
                     config;
 
-                // eslint-disable-next-line no-shadow
                 var initialize = function(params) {
                     if (!config) {
                         config = defaults;
@@ -177,7 +176,6 @@
                 };
 
                 var resetDelta = function() {
-                    // eslint-disable-next-line no-multi-assign
                     delta.height = delta.width = 0;
 
                     return module;

@@ -88,6 +88,7 @@ class TestUtils(ApiTestCase):  # lint-amnesty, pylint: disable=missing-class-doc
                             ('Username', 'test'),
                             ('Full Name', 'Legal Name'),
                             ('Course ID', 'course_key'),
+                            ('Annual Household Income', 'Income'),
                             ('Country', 'Country'),
                         )
                     ),

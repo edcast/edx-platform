@@ -527,26 +527,16 @@
   }
 
   .public-video-share-cta {
-    display: flex;
-    padding: $baseline;
-    justify-content: flex-end;
-    flex-direction: row;
-    margin: 0 -12px;
-    text-align: center;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1em;
+    position: relative;
+    z-index: 1;
+    margin-top: 20px;
 
     .org-logo{
-      height: 80px;
+      height: 40px;
     }
 
-    .nav-links {
-      display: flex;
-      flex-direction: row;
-      gap: 1em;
-      width: 100%;
-      justify-content: flex-end;
+    .nav-links{
+      float: right;
     }
 
     .btn-learn-more{
@@ -562,8 +552,7 @@
       }
     }
 
-    .btn-enroll,
-    .btn-go-to-course{
+    .btn-enroll{
       @extend %btn-shims;
       color: #FFFFFF;
       background: #D23228;
@@ -575,16 +564,6 @@
         color: darken(#FFFFFF, 7%);
         background: darken(#D23228, 7%);
         border-color: darken(#D23228, 7%);
-      }
-    }
-  }
-
-  @include media-breakpoint-down(sm) {
-    .public-video-share-cta {
-      flex-direction: column;
-
-      .nav-links {
-        flex-direction: column;
       }
     }
   }

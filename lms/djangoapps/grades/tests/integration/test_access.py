@@ -73,9 +73,9 @@ class GradesAccessIntegrationTest(ProblemSubmissionTestMixin, SharedModuleStoreT
         self.addCleanup(set_current_request, None)
         self.request = get_mock_request(UserFactory())
         self.student = self.request.user
-        self.client.login(username=self.student.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.student.username, password="test")
         CourseEnrollment.enroll(self.student, self.course.id)
-        self.instructor = UserFactory.create(is_staff=True, username='test_instructor', password=self.TEST_PASSWORD)
+        self.instructor = UserFactory.create(is_staff=True, username='test_instructor', password='test')
         self.refresh_course()
 
     def test_subsection_access_changed(self):

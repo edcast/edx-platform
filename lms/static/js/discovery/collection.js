@@ -19,7 +19,6 @@
             fetchXhr: null,
 
             performSearch: function(searchTerm, facets) {
-                // eslint-disable-next-line no-unused-expressions
                 this.fetchXhr && this.fetchXhr.abort();
                 this.searchTerm = searchTerm || '';
                 this.selectedFacets = facets || {};
@@ -38,7 +37,6 @@
             },
 
             loadNextPage: function() {
-                // eslint-disable-next-line no-unused-expressions
                 this.fetchXhr && this.fetchXhr.abort();
                 var data = this.preparePostData(this.page + 1);
                 this.fetchXhr = this.fetch({

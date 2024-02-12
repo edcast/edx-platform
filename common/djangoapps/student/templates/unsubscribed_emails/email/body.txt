@@ -1,1 +1,0 @@
-Please find attached CSV file for Unsubscribed Emails from {{ start_date }} to {{ end_date }}

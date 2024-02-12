@@ -43,14 +43,16 @@
                     fields = context.fields;
 
                 // Add default option to course array
-                this.addDefaultOption(fields, 0, context.course_id);
+                this.addDefaultOption(fields, 0);
+                // Add default option to household income array
+                this.addDefaultOption(fields, 1);
 
                 // Set non-form data needed to render the View
                 this.context = {
                     dashboard_url: context.dashboard_url,
                     header_text: context.header_text,
-                    course_id: context.course_id,
                     platform_name: context.platform_name,
+                    student_faq_url: context.student_faq_url,
                     account_settings_url: context.account_settings_url
                 };
 
@@ -144,16 +146,13 @@
                 }
             },
 
-            addDefaultOption: function(array, index, course_id) {
-                if (array[index].options.length >= 1) {
-                    if (!course_id) {
-                        array[index].options.unshift({
-                            name: gettext('Choose one'),
-                            value: '',
-                            default: true,
-                            disabled: true,
-                        });
-                    }
+            addDefaultOption: function(array, index) {
+                if (array[index].options.length > 1) {
+                    array[index].options.unshift({
+                        name: '- ' + gettext('Choose one') + ' -',
+                        value: '',
+                        default: true
+                    });
                 }
             }
         });

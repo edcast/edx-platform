@@ -2,9 +2,8 @@ import { combineReducers } from 'redux';
 import courseBlocksActions from '../actions/constants';
 
 export const buildBlockTree = (blocks, excludeBlockTypes) => {
-    if (!(blocks && blocks.root)) { return null; }
+    if (!(blocks && blocks.root)) return null;
     const blockTree = (root, parent) => {
-        // eslint-disable-next-line prefer-object-spread
         const tree = Object.assign({ parent }, blocks.blocks[root]);
         if (tree.children) {
             tree.children = tree.children.map(block => blockTree(block, root));
@@ -19,7 +18,6 @@ export const buildBlockTree = (blocks, excludeBlockTypes) => {
     return blockTree(blocks.root, null);
 };
 
-// eslint-disable-next-line default-param-last
 export const blocks = (state = {}, action) => {
     switch (action.type) {
     case courseBlocksActions.fetch.SUCCESS:
@@ -29,7 +27,6 @@ export const blocks = (state = {}, action) => {
     }
 };
 
-// eslint-disable-next-line default-param-last
 export const selectedBlock = (state = '', action) => {
     switch (action.type) {
     case courseBlocksActions.SELECT_BLOCK:
@@ -39,7 +36,7 @@ export const selectedBlock = (state = '', action) => {
     }
 };
 
-// eslint-disable-next-line default-param-last
+
 export const rootBlock = (state = null, action) => {
     switch (action.type) {
     case courseBlocksActions.fetch.SUCCESS:

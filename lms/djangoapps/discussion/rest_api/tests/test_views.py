@@ -87,7 +87,7 @@ class DiscussionAPIViewTestMixin(ForumsEnableMixin, CommentsServiceMockMixin, Ur
             start=datetime.now(UTC),
             discussion_topics={"Test Topic": {"id": "test_topic"}}
         )
-        self.password = "Password1234"
+        self.password = "password"
         self.user = UserFactory.create(password=self.password)
         # Ensure that parental controls don't apply to this user
         self.user.profile.year_of_birth = 1970
@@ -168,7 +168,7 @@ class UploadFileViewTest(ForumsEnableMixin, CommentsServiceMockMixin, UrlResetMi
                 content_type="image/jpeg",
             ),
         }
-        self.user = UserFactory.create(password=self.TEST_PASSWORD)
+        self.user = UserFactory.create(password="password")
         self.course = CourseFactory.create(org='a', course='b', run='c', start=datetime.now(UTC))
         self.url = reverse("upload_file", kwargs={"course_id": str(self.course.id)})
 
@@ -176,7 +176,7 @@ class UploadFileViewTest(ForumsEnableMixin, CommentsServiceMockMixin, UrlResetMi
         """
         Authenticates the test client with the example user.
         """
-        self.client.login(username=self.user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.user.username, password="password")
 
     def enroll_user_in_course(self):
         """
@@ -320,10 +320,10 @@ class CommentViewSetListByUserTest(
         self.addCleanup(httpretty.reset)
         self.addCleanup(httpretty.disable)
 
-        self.user = UserFactory.create(password=self.TEST_PASSWORD)
+        self.user = UserFactory.create(password="password")
         self.register_get_user_response(self.user)
 
-        self.other_user = UserFactory.create(password=self.TEST_PASSWORD)
+        self.other_user = UserFactory.create(password="password")
         self.register_get_user_response(self.other_user)
 
         self.course = CourseFactory.create(org="a", course="b", run="c", start=datetime.now(UTC))
@@ -405,7 +405,7 @@ class CommentViewSetListByUserTest(
         they're not either enrolled or staff members.
         """
         self.register_mock_endpoints()
-        self.client.login(username=self.other_user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.other_user.username, password="password")
         response = self.client.get(self.url)
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert json.loads(response.content)["developer_message"] == "Course not found."
@@ -416,7 +416,7 @@ class CommentViewSetListByUserTest(
         comments in that course.
         """
         self.register_mock_endpoints()
-        self.client.login(username=self.other_user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.other_user.username, password="password")
         CourseEnrollmentFactory.create(user=self.other_user, course_id=self.course.id)
         self.assert_successful_response(self.client.get(self.url))
 
@@ -425,7 +425,7 @@ class CommentViewSetListByUserTest(
         Staff users are allowed to get any user's comments.
         """
         self.register_mock_endpoints()
-        self.client.login(username=self.other_user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.other_user.username, password="password")
         GlobalStaff().add_users(self.other_user)
         self.assert_successful_response(self.client.get(self.url))
 
@@ -436,7 +436,7 @@ class CommentViewSetListByUserTest(
         course.
         """
         self.register_mock_endpoints()
-        self.client.login(username=self.other_user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.other_user.username, password="password")
         role(course_key=self.course.id).add_users(self.other_user)
         self.assert_successful_response(self.client.get(self.url))
 
@@ -445,7 +445,7 @@ class CommentViewSetListByUserTest(
         Requests for users that don't exist result in a 404 response.
         """
         self.register_mock_endpoints()
-        self.client.login(username=self.other_user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.other_user.username, password="password")
         GlobalStaff().add_users(self.other_user)
         url = self.build_url("non_existent", self.course.id)
         response = self.client.get(url)
@@ -456,7 +456,7 @@ class CommentViewSetListByUserTest(
         Requests for courses that don't exist result in a 404 response.
         """
         self.register_mock_endpoints()
-        self.client.login(username=self.other_user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.other_user.username, password="password")
         GlobalStaff().add_users(self.other_user)
         url = self.build_url(self.user.username, "course-v1:x+y+z")
         response = self.client.get(url)
@@ -467,7 +467,7 @@ class CommentViewSetListByUserTest(
         Requests with invalid course ID should fail form validation.
         """
         self.register_mock_endpoints()
-        self.client.login(username=self.other_user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.other_user.username, password="password")
         GlobalStaff().add_users(self.other_user)
         url = self.build_url(self.user.username, "an invalid course")
         response = self.client.get(url)
@@ -484,7 +484,7 @@ class CommentViewSetListByUserTest(
         self.register_get_threads_response(threads=[], page=1, num_pages=1)
         self.register_get_comments_response(comments=[], page=1, num_pages=1)
 
-        self.client.login(username=self.other_user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.other_user.username, password="password")
         GlobalStaff().add_users(self.other_user)
         url = self.build_url(self.user.username, self.course.id, page=2)
         response = self.client.get(url)
@@ -517,7 +517,6 @@ class CourseViewTest(DiscussionAPIViewTestMixin, ModuleStoreTestCase):
             200,
             {
                 "id": str(self.course.id),
-                "is_posting_enabled": True,
                 "blackouts": [],
                 "thread_list_url": "http://testserver/api/discussion/v1/threads/?course_id=course-v1%3Ax%2By%2Bz",
                 "following_thread_list_url": (
@@ -536,6 +535,7 @@ class CourseViewTest(DiscussionAPIViewTestMixin, ModuleStoreTestCase):
                 'is_user_admin': False,
                 "user_roles": ["Student"],
                 'learners_tab_enabled': False,
+                "reason_codes_enabled": False,
                 "edit_reasons": [{"code": "test-edit-reason", "label": "Test Edit Reason"}],
                 "post_close_reasons": [{"code": "test-close-reason", "label": "Test Close Reason"}],
             }
@@ -928,7 +928,7 @@ class CourseTopicsViewV3Test(DiscussionAPIViewTestMixin, CommentsServiceMockMixi
     """
     def setUp(self) -> None:
         super().setUp()
-        self.password = self.TEST_PASSWORD
+        self.password = "password"
         self.user = UserFactory.create(password=self.password)
         self.client.login(username=self.user.username, password=self.password)
         self.staff = AdminFactory.create()
@@ -1709,8 +1709,6 @@ class LearnerThreadViewAPITest(DiscussionAPIViewTestMixin, ModuleStoreTestCase):
                 "votes": {"up_count": 4},
                 "comments_count": 5,
                 "unread_comments_count": 3,
-                "closed_by_label": None,
-                "edit_by_label": None,
             })],
             "page": 1,
             "num_pages": 1,
@@ -1970,14 +1968,6 @@ class CommentViewSetListTest(DiscussionAPIViewTestMixin, ModuleStoreTestCase, Pr
             "anonymous": False,
             "anonymous_to_peers": False,
             "last_edit": None,
-            "edit_by_label": None,
-            "profile_image": {
-                "has_image": False,
-                "image_url_full": "http://testserver/static/default_500.png",
-                "image_url_large": "http://testserver/static/default_120.png",
-                "image_url_medium": "http://testserver/static/default_50.png",
-                "image_url_small": "http://testserver/static/default_30.png",
-            },
         }
         response_data.update(overrides or {})
         return response_data
@@ -2363,7 +2353,6 @@ class CommentViewSetDeleteTest(DiscussionAPIViewTestMixin, ModuleStoreTestCase):
 @httpretty.activate
 @disable_signal(api, 'comment_created')
 @mock.patch.dict("django.conf.settings.FEATURES", {"ENABLE_DISCUSSION_SERVICE": True})
-@mock.patch("lms.djangoapps.discussion.signals.handlers.send_response_notifications", new=mock.Mock())
 class CommentViewSetCreateTest(DiscussionAPIViewTestMixin, ModuleStoreTestCase):
     """Tests for CommentViewSet create"""
     def setUp(self):
@@ -2403,14 +2392,6 @@ class CommentViewSetCreateTest(DiscussionAPIViewTestMixin, ModuleStoreTestCase):
             "anonymous": False,
             "anonymous_to_peers": False,
             "last_edit": None,
-            "edit_by_label": None,
-            "profile_image": {
-                "has_image": False,
-                "image_url_full": "http://testserver/static/default_500.png",
-                "image_url_large": "http://testserver/static/default_120.png",
-                "image_url_medium": "http://testserver/static/default_50.png",
-                "image_url_small": "http://testserver/static/default_30.png",
-            },
         }
         response = self.client.post(
             self.url,
@@ -2502,14 +2483,6 @@ class CommentViewSetPartialUpdateTest(DiscussionAPIViewTestMixin, ModuleStoreTes
             "anonymous": False,
             "anonymous_to_peers": False,
             "last_edit": None,
-            "edit_by_label": None,
-            "profile_image": {
-                "has_image": False,
-                "image_url_full": "http://testserver/static/default_500.png",
-                "image_url_large": "http://testserver/static/default_120.png",
-                "image_url_medium": "http://testserver/static/default_50.png",
-                "image_url_small": "http://testserver/static/default_30.png",
-            },
         }
         response_data.update(overrides or {})
         return response_data
@@ -2699,14 +2672,6 @@ class CommentViewSetRetrieveTest(DiscussionAPIViewTestMixin, ModuleStoreTestCase
             "anonymous": False,
             "anonymous_to_peers": False,
             "last_edit": None,
-            "edit_by_label": None,
-            "profile_image": {
-                "has_image": False,
-                "image_url_full": "http://testserver/static/default_500.png",
-                "image_url_large": "http://testserver/static/default_120.png",
-                "image_url_medium": "http://testserver/static/default_50.png",
-                "image_url_small": "http://testserver/static/default_30.png",
-            },
         }
 
         response = self.client.get(self.url)
@@ -2786,7 +2751,7 @@ class CourseDiscussionSettingsAPIViewTest(APITestCase, UrlResetMixin, ModuleStor
             discussion_topics={"Test Topic": {"id": "test_topic"}}
         )
         self.path = reverse('discussion_course_settings', kwargs={'course_id': str(self.course.id)})
-        self.password = self.TEST_PASSWORD
+        self.password = 'edx'
         self.user = UserFactory(username='staff', password=self.password, is_staff=True)
 
     def _get_oauth_headers(self, user):
@@ -3084,7 +3049,7 @@ class CourseDiscussionRolesAPIViewTest(APITestCase, UrlResetMixin, ModuleStoreTe
             run="z",
             start=datetime.now(UTC),
         )
-        self.password = self.TEST_PASSWORD
+        self.password = 'edx'
         self.user = UserFactory(username='staff', password=self.password, is_staff=True)
         course_key = CourseKey.from_string('course-v1:x+y+z')
         seed_permissions_roles(course_key)
@@ -3292,7 +3257,7 @@ class CourseActivityStatsTest(ForumsEnableMixin, UrlResetMixin, CommentsServiceM
             user = UserFactory.create(
                 username=stat['username'],
                 email=f"{stat['username']}@example.com",
-                password=self.TEST_PASSWORD
+                password='12345'
             )
             CourseEnrollment.enroll(user, self.course.id, mode='audit')
 
@@ -3306,7 +3271,7 @@ class CourseActivityStatsTest(ForumsEnableMixin, UrlResetMixin, CommentsServiceM
         """
         Tests that for a regular user stats are returned without flag counts
         """
-        self.client.login(username=self.user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.user.username, password='test')
         response = self.client.get(self.url)
         data = response.json()
         assert data["results"] == self.stats_without_flags
@@ -3316,7 +3281,7 @@ class CourseActivityStatsTest(ForumsEnableMixin, UrlResetMixin, CommentsServiceM
         """
         Tests that for a moderator user stats are returned with flag counts
         """
-        self.client.login(username=self.moderator.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.moderator.username, password='test')
         response = self.client.get(self.url)
         data = response.json()
         assert data["results"] == self.stats
@@ -3336,7 +3301,7 @@ class CourseActivityStatsTest(ForumsEnableMixin, UrlResetMixin, CommentsServiceM
         """
         Test valid sorting options and defaults
         """
-        self.client.login(username=username, password=self.TEST_PASSWORD)
+        self.client.login(username=username, password='test')
         params = {}
         if ordering_requested:
             params = {"order_by": ordering_requested}
@@ -3354,7 +3319,7 @@ class CourseActivityStatsTest(ForumsEnableMixin, UrlResetMixin, CommentsServiceM
         """
         Test for invalid sorting options for regular users.
         """
-        self.client.login(username=self.user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.user.username, password='test')
         response = self.client.get(self.url, {"order_by": order_by})
         assert "order_by" in response.json()["field_errors"]
 
@@ -3369,7 +3334,7 @@ class CourseActivityStatsTest(ForumsEnableMixin, UrlResetMixin, CommentsServiceM
         Test for endpoint with username param.
         """
         params = {'username': username_search_string}
-        self.client.login(username=self.moderator.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.moderator.username, password='test')
         self.client.get(self.url, params)
         assert urlparse(
             httpretty.last_request().path  # lint-amnesty, pylint: disable=no-member
@@ -3384,7 +3349,7 @@ class CourseActivityStatsTest(ForumsEnableMixin, UrlResetMixin, CommentsServiceM
         Test for endpoint with username param with no matches.
         """
         params = {'username': 'unknown'}
-        self.client.login(username=self.moderator.username, password=self.TEST_PASSWORD)
+        self.client.login(username=self.moderator.username, password='test')
         response = self.client.get(self.url, params)
         data = response.json()
         self.assertFalse(data['results'])

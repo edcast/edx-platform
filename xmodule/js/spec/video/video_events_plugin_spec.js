@@ -1,9 +1,7 @@
-import '../helper.js';
+import '../helper.js'
 
-// eslint-disable-next-line no-shadow-restricted-names
 (function(undefined) {
     'use strict';
-
     var describeInfo, state, oldOTBD;
 
     describeInfo = new jasmine.DescribeInfo('', function() {

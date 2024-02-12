@@ -17,6 +17,7 @@ from xblock.fields import Integer, Scope, String
 from xblock.runtime import DictKeyValueStore, KvsFieldData
 
 from xmodule.fields import Date
+from xmodule.modulestore import only_xmodules
 from xmodule.modulestore.inheritance import InheritanceMixin, compute_inherited_metadata
 from xmodule.modulestore.xml import ImportSystem, LibraryXMLModuleStore, XMLModuleStore
 from xmodule.tests import DATA_DIR
@@ -51,6 +52,9 @@ class DummySystem(ImportSystem):  # lint-amnesty, pylint: disable=abstract-metho
             services={'field-data': KvsFieldData(DictKeyValueStore())},
         )
 
+    def render_template(self, _template, _context):  # lint-amnesty, pylint: disable=method-hidden
+        raise Exception("Shouldn't be called")
+
 
 class BaseCourseTestCase(TestCase):
     '''Make sure block imports work properly, including for malformed inputs'''
@@ -68,6 +72,7 @@ class BaseCourseTestCase(TestCase):
             DATA_DIR,
             source_dirs=[name],
             xblock_mixins=(InheritanceMixin,),
+            xblock_select=only_xmodules,
         )
         courses = modulestore.get_courses()
         assert len(courses) == 1
@@ -106,9 +111,9 @@ class PureXBlockImportTest(BaseCourseTestCase):
     @patch('xmodule.x_module.XModuleMixin.location')
     def test_parsing_pure_xblock(self, xml, mock_location):
         system = self.get_system(load_error_blocks=False)
-        block = system.process_xml(xml)
-        assert isinstance(block, GenericXBlock)
-        self.assert_xblocks_are_good(block)
+        descriptor = system.process_xml(xml)
+        assert isinstance(descriptor, GenericXBlock)
+        self.assert_xblocks_are_good(descriptor)
         assert not mock_location.called
 
 
@@ -122,9 +127,9 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
         bad_xml = '''<sequential display_name="oops\N{SNOWMAN}"><video url="hi"></sequential>'''
         system = self.get_system()
 
-        block = system.process_xml(bad_xml)
+        descriptor = system.process_xml(bad_xml)
 
-        assert block.__class__.__name__ == 'ErrorBlockWithMixins'
+        assert descriptor.__class__.__name__ == 'ErrorBlockWithMixins'
 
     def test_unique_url_names(self):
         '''Check that each error gets its very own url_name'''
@@ -132,19 +137,19 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
         bad_xml2 = '''<sequential url_name="oops"><video url="hi"></sequential>'''
         system = self.get_system()
 
-        block1 = system.process_xml(bad_xml)
-        block2 = system.process_xml(bad_xml2)
+        descriptor1 = system.process_xml(bad_xml)
+        descriptor2 = system.process_xml(bad_xml2)
 
-        assert block1.location != block2.location
+        assert descriptor1.location != descriptor2.location
 
         # Check that each vertical gets its very own url_name
         bad_xml = '''<vertical display_name="abc"><problem url_name="exam1:2013_Spring:abc"/></vertical>'''
         bad_xml2 = '''<vertical display_name="abc"><problem url_name="exam2:2013_Spring:abc"/></vertical>'''
 
-        block1 = system.process_xml(bad_xml)
-        block2 = system.process_xml(bad_xml2)
+        descriptor1 = system.process_xml(bad_xml)
+        descriptor2 = system.process_xml(bad_xml2)
 
-        assert block1.location != block2.location
+        assert descriptor1.location != descriptor2.location
 
     def test_reimport(self):
         '''Make sure an already-exported error xml tag loads properly'''
@@ -152,16 +157,16 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
         self.maxDiff = None
         bad_xml = '''<sequential display_name="oops"><video url="hi"></sequential>'''
         system = self.get_system()
-        block = system.process_xml(bad_xml)
+        descriptor = system.process_xml(bad_xml)
 
         node = etree.Element('unknown')
-        block.add_xml_to_node(node)
-        re_import_block = system.process_xml(etree.tostring(node))
+        descriptor.add_xml_to_node(node)
+        re_import_descriptor = system.process_xml(etree.tostring(node))
 
-        assert re_import_block.__class__.__name__ == 'ErrorBlockWithMixins'
+        assert re_import_descriptor.__class__.__name__ == 'ErrorBlockWithMixins'
 
-        assert block.contents == re_import_block.contents
-        assert block.error_msg == re_import_block.error_msg
+        assert descriptor.contents == re_import_descriptor.contents
+        assert descriptor.error_msg == re_import_descriptor.error_msg
 
     def test_fixed_xml_tag(self):
         """Make sure a tag that's been fixed exports as the original tag type"""
@@ -175,25 +180,25 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
 
         # load it
         system = self.get_system()
-        block = system.process_xml(xml_str_in)
+        descriptor = system.process_xml(xml_str_in)
 
         # export it
         node = etree.Element('unknown')
-        block.add_xml_to_node(node)
+        descriptor.add_xml_to_node(node)
 
         # Now make sure the exported xml is a sequential
         assert node.tag == 'sequential'
 
-    def course_block_inheritance_check(self, block, from_date_string, unicorn_color, course_run=RUN):
+    def course_descriptor_inheritance_check(self, descriptor, from_date_string, unicorn_color, course_run=RUN):
         """
-        Checks to make sure that metadata inheritance on a course block is respected.
+        Checks to make sure that metadata inheritance on a course descriptor is respected.
         """
         # pylint: disable=protected-access
-        print((block, block._field_data))
-        assert block.due == ImportTestCase.date.from_json(from_date_string)
+        print((descriptor, descriptor._field_data))
+        assert descriptor.due == ImportTestCase.date.from_json(from_date_string)
 
         # Check that the child inherits due correctly
-        child = block.get_children()[0]
+        child = descriptor.get_children()[0]
         assert child.due == ImportTestCase.date.from_json(from_date_string)
         # need to convert v to canonical json b4 comparing
         assert ImportTestCase.date.to_json(ImportTestCase.date.from_json(from_date_string)) ==\
@@ -201,9 +206,9 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
 
         # Now export and check things
         file_system = OSFS(mkdtemp())
-        block.runtime.export_fs = file_system.makedir('course', recreate=True)
+        descriptor.runtime.export_fs = file_system.makedir('course', recreate=True)
         node = etree.Element('unknown')
-        block.add_xml_to_node(node)
+        descriptor.add_xml_to_node(node)
 
         # Check that the exported xml is just a pointer
         print(("Exported xml:", etree.tostring(node)))
@@ -213,7 +218,7 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
         assert node.attrib['org'] == ORG
 
         # Does the course still have unicorns?
-        with block.runtime.export_fs.open(f'course/{course_run}.xml') as f:
+        with descriptor.runtime.export_fs.open(f'course/{course_run}.xml') as f:
             course_xml = etree.fromstring(f.read())
 
         assert course_xml.attrib['unicorn'] == unicorn_color
@@ -227,7 +232,7 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
 
         # Does the chapter tag now have a due attribute?
         # hardcoded path to child
-        with block.runtime.export_fs.open('chapter/ch.xml') as f:
+        with descriptor.runtime.export_fs.open('chapter/ch.xml') as f:
             chapter_xml = etree.fromstring(f.read())
         assert chapter_xml.tag == 'chapter'
         assert 'due' not in chapter_xml.attrib
@@ -250,9 +255,9 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
         </course>'''.format(
             due=from_date_string, org=ORG, course=COURSE, url_name=url_name, unicorn_color=unicorn_color
         )
-        block = system.process_xml(start_xml)
-        compute_inherited_metadata(block)
-        self.course_block_inheritance_check(block, from_date_string, unicorn_color)
+        descriptor = system.process_xml(start_xml)
+        compute_inherited_metadata(descriptor)
+        self.course_descriptor_inheritance_check(descriptor, from_date_string, unicorn_color)
 
     def test_library_metadata_import_export(self):
         """Two checks:
@@ -274,12 +279,18 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
         </library>'''.format(
             due=from_date_string, org=ORG, course=COURSE, url_name=url_name, unicorn_color=unicorn_color
         )
-        block = system.process_xml(start_xml)
+        descriptor = system.process_xml(start_xml)
 
-        compute_inherited_metadata(block)
+        # pylint: disable=protected-access
+        original_unwrapped = descriptor._unwrapped_field_data
+        LibraryXMLModuleStore.patch_descriptor_kvs(descriptor)
+        # '_unwrapped_field_data' is reset in `patch_descriptor_kvs`
+        # pylint: disable=protected-access
+        assert original_unwrapped is not descriptor._unwrapped_field_data
+        compute_inherited_metadata(descriptor)
         # Check the course block, since it has inheritance
-        block = block.get_children()[0]
-        self.course_block_inheritance_check(block, from_date_string, unicorn_color)
+        descriptor = descriptor.get_children()[0]
+        self.course_descriptor_inheritance_check(descriptor, from_date_string, unicorn_color)
 
     def test_metadata_no_inheritance(self):
         """
@@ -295,9 +306,9 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
                 <html url_name="h" display_name="H">Two houses, ...</html>
             </chapter>
         </course>'''.format(org=ORG, course=COURSE, url_name=url_name)
-        block = system.process_xml(start_xml)
-        compute_inherited_metadata(block)
-        self.course_block_no_inheritance_check(block)
+        descriptor = system.process_xml(start_xml)
+        compute_inherited_metadata(descriptor)
+        self.course_descriptor_no_inheritance_check(descriptor)
 
     def test_library_metadata_no_inheritance(self):
         """
@@ -315,30 +326,31 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
                 </chapter>
             </course>
         </library>'''.format(org=ORG, course=COURSE, url_name=url_name)
-        block = system.process_xml(start_xml)
-        compute_inherited_metadata(block)
+        descriptor = system.process_xml(start_xml)
+        LibraryXMLModuleStore.patch_descriptor_kvs(descriptor)
+        compute_inherited_metadata(descriptor)
         # Run the checks on the course node instead.
-        block = block.get_children()[0]
-        self.course_block_no_inheritance_check(block)
+        descriptor = descriptor.get_children()[0]
+        self.course_descriptor_no_inheritance_check(descriptor)
 
-    def course_block_no_inheritance_check(self, block):
+    def course_descriptor_no_inheritance_check(self, descriptor):
         """
         Verifies that a default value of None (for due) does not get marked as inherited.
         """
-        assert block.due is None
+        assert descriptor.due is None
 
         # Check that the child does not inherit a value for due
-        child = block.get_children()[0]
+        child = descriptor.get_children()[0]
         assert child.due is None
 
         # Check that the child hasn't started yet
         assert datetime.datetime.now(UTC) <= child.start
 
-    def override_metadata_check(self, block, child, course_due, child_due):
+    def override_metadata_check(self, descriptor, child, course_due, child_due):
         """
         Verifies that due date can be overriden at child level.
         """
-        assert block.due == ImportTestCase.date.from_json(course_due)
+        assert descriptor.due == ImportTestCase.date.from_json(course_due)
         assert child.due == ImportTestCase.date.from_json(child_due)
         # Test inherited metadata. Due does not appear here (because explicitly set on child).
         assert ImportTestCase.date.to_json(ImportTestCase.date.from_json(course_due)) == child.xblock_kvs.inherited_settings['due']  # pylint: disable=line-too-long
@@ -358,12 +370,12 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
                 <html url_name="h" display_name="H">Two houses, ...</html>
             </chapter>
         </course>'''.format(due=course_due, org=ORG, course=COURSE, url_name=url_name)
-        block = system.process_xml(start_xml)
-        child = block.get_children()[0]
+        descriptor = system.process_xml(start_xml)
+        child = descriptor.get_children()[0]
         # pylint: disable=protected-access
         child._field_data.set(child, 'due', child_due)
-        compute_inherited_metadata(block)
-        self.override_metadata_check(block, child, course_due, child_due)
+        compute_inherited_metadata(descriptor)
+        self.override_metadata_check(descriptor, child, course_due, child_due)
 
     def test_library_metadata_override_default(self):
         """
@@ -382,14 +394,15 @@ class ImportTestCase(BaseCourseTestCase):  # lint-amnesty, pylint: disable=missi
                 </chapter>
             </course>
         </library>'''.format(due=course_due, org=ORG, course=COURSE, url_name=url_name)
-        block = system.process_xml(start_xml)
+        descriptor = system.process_xml(start_xml)
+        LibraryXMLModuleStore.patch_descriptor_kvs(descriptor)
         # Chapter is two levels down here.
-        child = block.get_children()[0].get_children()[0]
+        child = descriptor.get_children()[0].get_children()[0]
         # pylint: disable=protected-access
         child._field_data.set(child, 'due', child_due)
-        compute_inherited_metadata(block)
-        block = block.get_children()[0]
-        self.override_metadata_check(block, child, course_due, child_due)
+        compute_inherited_metadata(descriptor)
+        descriptor = descriptor.get_children()[0]
+        self.override_metadata_check(descriptor, child, course_due, child_due)
 
     def test_is_pointer_tag(self):
         """

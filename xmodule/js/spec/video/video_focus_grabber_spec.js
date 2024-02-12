@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(undefined) {
     describe('Video FocusGrabber', function() {
         var state;
@@ -54,8 +53,8 @@
         });
 
         it(
-            'when first focus grabber is focused "mousemove" event is '
-            + 'triggered, grabbers are disabled',
+            'when first focus grabber is focused "mousemove" event is ' +
+            'triggered, grabbers are disabled',
             function() {
                 state.focusGrabber.elFirst.triggerHandler('focus');
 
@@ -64,8 +63,8 @@
             });
 
         it(
-            'when last focus grabber is focused "mousemove" event is '
-            + 'triggered, grabbers are disabled',
+            'when last focus grabber is focused "mousemove" event is ' +
+            'triggered, grabbers are disabled',
             function() {
                 state.focusGrabber.elLast.triggerHandler('focus');
 

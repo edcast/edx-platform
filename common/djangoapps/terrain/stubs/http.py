@@ -2,7 +2,6 @@
 Stub implementation of an HTTP service.
 """
 
-
 import json
 import threading
 from functools import wraps
@@ -202,7 +201,7 @@ class StubHttpRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
         if content is not None:
-            if isinstance(content, str):
+            if not six.PY2 and isinstance(content, str):
                 content = content.encode('utf-8')
             self.wfile.write(content)
 

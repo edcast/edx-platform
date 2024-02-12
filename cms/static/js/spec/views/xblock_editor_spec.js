@@ -98,7 +98,6 @@ describe('XBlockEditorView', function() {
 
         it('can render a module with only settings', function() {
             var requests = AjaxHelpers.requests(this),
-                // eslint-disable-next-line no-shadow
                 mockXModuleEditorHtml;
             mockXModuleEditorHtml = readFixtures('templates/mock/mock-xmodule-settings-only-editor.underscore');
 

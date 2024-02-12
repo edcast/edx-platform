@@ -5,6 +5,8 @@ from uuid import uuid4
 
 from edx_django_utils import ip
 
+from openedx.core.djangoapps.util import legacy_ip
+
 
 def real_ip(group, request):  # pylint: disable=unused-argument
     """
@@ -15,7 +17,10 @@ def real_ip(group, request):  # pylint: disable=unused-argument
 
     (Intended to be called by ``django-ratelimit``, hence the unused argument.)
     """
-    return ip.get_safest_client_ip(request)
+    if legacy_ip.USE_LEGACY_IP.is_enabled():
+        return legacy_ip.get_legacy_ip(request)
+    else:
+        return ip.get_safest_client_ip(request)
 
 
 def request_post_email(group, request) -> str:  # pylint: disable=unused-argument

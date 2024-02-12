@@ -52,9 +52,11 @@ class TestGatedContent(MilestonesTestCaseMixin, SharedModuleStoreTestCase):
             org='edX',
             number='EDX101',
             run='EDX101_RUN1',
-            display_name='edX 101',
-            enable_subsection_gating=True,
-            grading_policy={
+            display_name='edX 101'
+        )
+        with modulestore().bulk_operations(course.id):
+            course.enable_subsection_gating = True
+            grading_policy = {
                 "GRADER": [{
                     "type": "Homework",
                     "min_count": 3,
@@ -62,9 +64,10 @@ class TestGatedContent(MilestonesTestCaseMixin, SharedModuleStoreTestCase):
                     "short_label": "HW",
                     "weight": 1.0
                 }]
-            },
-        )
-        with modulestore().bulk_operations(course.id):
+            }
+            course.grading_policy = grading_policy
+            course.save()
+
             # create chapter
             cls.chapter1 = BlockFactory.create(
                 parent=course,

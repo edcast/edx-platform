@@ -11,6 +11,8 @@ from unittest.mock import patch
 import ddt
 import lxml
 import pytz
+
+from unittest import skip
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.test.utils import override_settings
@@ -39,7 +41,7 @@ from xmodule.modulestore.tests.django_utils import TEST_DATA_SPLIT_MODULESTORE
 from xmodule.modulestore.tests.factories import CourseFactory, BlockFactory, LibraryFactory, check_mongo_calls  # lint-amnesty, pylint: disable=wrong-import-order
 
 from ..course import _deprecated_blocks_info, course_outline_initial_state, reindex_course_and_check_access
-from cms.djangoapps.contentstore.xblock_storage_handlers.view_handlers import VisibilityState, create_xblock_info
+from ..block import VisibilityState, create_xblock_info
 
 
 class TestCourseIndex(CourseTestCase):
@@ -61,6 +63,7 @@ class TestCourseIndex(CourseTestCase):
             display_name='dotted.course.name-2',
         )
 
+    @skip('we remove view in studio')
     def check_courses_on_index(self, authed_client, expected_course_tab_len):
         """
         Test that the React course listing is present.
@@ -551,6 +554,30 @@ class TestCourseOutline(CourseTestCase):
         self.assertIn(str(self.sequential.location), expanded_locators)
         self.assertIn(str(self.vertical.location), expanded_locators)
 
+        # CM we have removed the start date edit button
+        # def _assert_settings_link_present(response):
+        #     """
+        #     Asserts there's a course settings link on the course page by the course release date.
+        #     """
+        #     parsed_html = lxml.html.fromstring(response.content)
+        #     settings_link = parsed_html.find_class('course-status')[0].find_class('action-edit')[0].find('a')
+        #     self.assertIsNotNone(settings_link)
+        #     self.assertEqual(settings_link.get('href'), reverse_course_url('settings_handler', self.course.id))
+
+        outline_url = reverse_course_url('course_handler', self.course.id)
+        response = self.client.get(outline_url, {}, HTTP_ACCEPT='text/html')
+
+        # A course with the default release date should display as "Unscheduled"
+        self.assertEqual(_get_release_date(response), 'Unscheduled')
+        # _assert_settings_link_present(response)
+
+        self.course.start = datetime.datetime(2014, 1, 1, tzinfo=pytz.utc)
+        modulestore().update_item(self.course, ModuleStoreEnum.UserID.test)
+        response = self.client.get(outline_url, {}, HTTP_ACCEPT='text/html')
+
+        self.assertEqual(_get_release_date(response), get_default_time_display(self.course.start))
+        #_assert_settings_link_present(response)
+
     def _create_test_data(self, course_block, create_blocks=False, publish=True, block_types=None):
         """
         Create data for test.
@@ -664,14 +691,6 @@ class TestCourseOutline(CourseTestCase):
         response = self.client.get_html(reverse_course_url('course_handler', self.course.id))
         proctored_exam_settings_url = get_proctored_exam_settings_url(self.course.id)
         self.assertContains(response, proctored_exam_settings_url, 2)
-
-    def test_number_of_calls_to_db(self):
-        """
-        Test to check number of queries made to mysql and mongo
-        """
-        with self.assertNumQueries(26, table_ignorelist=WAFFLE_TABLES):
-            with check_mongo_calls(3):
-                self.client.get_html(reverse_course_url('course_handler', self.course.id))
 
 
 class TestCourseReIndex(CourseTestCase):

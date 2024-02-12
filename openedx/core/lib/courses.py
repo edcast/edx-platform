@@ -87,7 +87,7 @@ def clean_course_id(model_form, is_required=True):
 
 def get_course_by_id(course_key, depth=0):
     """
-    Given a course id, return the corresponding course block.
+    Given a course id, return the corresponding course descriptor.
 
     If such a course does not exist, raises a 404.
 

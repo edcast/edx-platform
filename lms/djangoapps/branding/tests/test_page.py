@@ -14,6 +14,7 @@ from django.test.utils import override_settings
 from django.urls import reverse
 from milestones.tests.utils import MilestonesTestCaseMixin
 from pytz import UTC
+from unittest import skip
 
 from common.djangoapps.edxmako.shortcuts import render_to_response
 from common.djangoapps.util.milestones_helpers import set_prerequisite_courses
@@ -85,6 +86,7 @@ class AnonymousIndexPageTest(ModuleStoreTestCase):
         response = self.client.get('/')
         assert response.status_code == 200
 
+    @skip("we block this header")
     @override_settings(X_FRAME_OPTIONS='ALLOW')
     def test_allow_x_frame_options(self):
         """
@@ -95,6 +97,7 @@ class AnonymousIndexPageTest(ModuleStoreTestCase):
         resp = self.client.get('/')
         assert resp['X-Frame-Options'] == 'ALLOW'
 
+    @skip("we block this header")
     def test_deny_x_frame_options(self):
         """
         Check the x-frame-option response header

@@ -1,5 +1,4 @@
 /** Ensure that a function is only run once every `wait` milliseconds */
-// eslint-disable-next-line max-classes-per-file
 function throttle(fn, wait) {
     let time = 0;
     function delay() {
@@ -13,6 +12,7 @@ function throttle(fn, wait) {
     }
     return delay;
 }
+
 
 export class ElementViewing {
     /**
@@ -96,6 +96,7 @@ export class ElementViewing {
     }
 }
 
+
 export class ViewedEventTracker {
     /**
    * When the top or bottom of an element is first viewed, and the entire
@@ -178,3 +179,4 @@ export class ViewedEventTracker {
         });
     }
 }
+

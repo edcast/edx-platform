@@ -1,11 +1,12 @@
 """
 Django app configuration for the XBlock Runtime django app
 """
+
+
 from django.apps import AppConfig, apps
 from django.conf import settings
 
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
-from .data import StudentDataMode
 
 
 class XBlockAppConfig(AppConfig):
@@ -52,7 +53,7 @@ class LmsXBlockAppConfig(XBlockAppConfig):
         editing XBlock content in the LMS
         """
         return dict(
-            student_data_mode=StudentDataMode.Persisted,
+            student_data_mode='persisted',
         )
 
     def get_site_root_url(self):
@@ -76,7 +77,7 @@ class StudioXBlockAppConfig(XBlockAppConfig):
         editing XBlock content in Studio
         """
         return dict(
-            student_data_mode=StudentDataMode.Ephemeral,
+            student_data_mode='ephemeral',
         )
 
     def get_site_root_url(self):

@@ -8,7 +8,6 @@ import StringUtils from 'edx-ui-toolkit/js/utils/string-utils';
 import CertificateView from './certificate_list_view';
 import ProgramProgressView from './progress_circle_view';
 
-import arrowUprightIcon from '../../../images/arrow-upright-icon.svg';
 import sidebarTpl from '../../../templates/learner_dashboard/program_details_sidebar.underscore';
 
 class ProgramDetailsSidebarView extends Backbone.View {
@@ -18,7 +17,6 @@ class ProgramDetailsSidebarView extends Backbone.View {
                 'click .pathway-button': 'trackPathwayClicked',
             },
         };
-        // eslint-disable-next-line prefer-object-spread
         super(Object.assign({}, defaults, options));
     }
 
@@ -27,33 +25,23 @@ class ProgramDetailsSidebarView extends Backbone.View {
         this.courseModel = options.courseModel || {};
         this.certificateCollection = options.certificateCollection || [];
         this.programCertificate = this.getProgramCertificate();
+        this.programRecordUrl = options.programRecordUrl;
         this.industryPathways = options.industryPathways;
         this.creditPathways = options.creditPathways;
         this.programModel = options.model;
-        this.subscriptionModel = options.subscriptionModel;
-        this.programTabViewEnabled = options.programTabViewEnabled;
-        this.isSubscriptionEligible = options.isSubscriptionEligible;
-        this.urls = options.urls;
+        this.programTabViewEnabled =  options.programTabViewEnabled;
         this.render();
     }
 
     render() {
-        // eslint-disable-next-line no-undef
-        const data = $.extend(
-            {},
-            this.model.toJSON(),
-            this.subscriptionModel.toJSON(),
-            {
-                programCertificate: this.programCertificate
-                    ? this.programCertificate.toJSON() : {},
-                industryPathways: this.industryPathways,
-                creditPathways: this.creditPathways,
-                programTabViewEnabled: this.programTabViewEnabled,
-                isSubscriptionEligible: this.isSubscriptionEligible,
-                arrowUprightIcon,
-                ...this.urls,
-            },
-        );
+        const data = $.extend({}, this.model.toJSON(), {
+            programCertificate: this.programCertificate ?
+                this.programCertificate.toJSON() : {},
+            programRecordUrl: this.programRecordUrl,
+            industryPathways: this.industryPathways,
+            creditPathways: this.creditPathways,
+            programTabViewEnabled: this.programTabViewEnabled
+        });
 
         HtmlUtils.setHtml(this.$el, this.tpl(data));
         this.postRender();
@@ -116,9 +104,7 @@ class ProgramDetailsSidebarView extends Backbone.View {
             // Credentials uses the uuid without dashes so we are converting here for consistency
             program_uuid: this.programModel.attributes.uuid.replace(/-/g, ''),
             program_name: this.programModel.attributes.title,
-            // eslint-disable-next-line no-undef
             pathway_link_uuid: $(button).data('pathwayUuid').replace(/-/g, ''),
-            // eslint-disable-next-line no-undef
             pathway_name: $(button).data('pathwayName'),
         });
     }

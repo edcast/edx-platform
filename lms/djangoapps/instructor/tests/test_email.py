@@ -5,6 +5,8 @@ non-Mongo backed courses, regardless of email feature flag, and
 that the view is conditionally available when Course Auth is turned on.
 """
 
+from nose.plugins.attrib import attr
+from unittest import skip
 
 from django.urls import reverse
 from opaque_keys.edx.keys import CourseKey
@@ -19,6 +21,8 @@ from xmodule.modulestore.tests.factories import CourseFactory  # lint-amnesty, p
 from lms.djangoapps.bulk_email.models_api import is_bulk_email_disabled_for_course
 
 
+@skip('we remove view in edcast')
+@attr(shard=1)
 class TestNewInstructorDashboardEmailViewMongoBacked(SharedModuleStoreTestCase):
     """
     Check for email view on the new instructor dashboard
@@ -40,7 +44,7 @@ class TestNewInstructorDashboardEmailViewMongoBacked(SharedModuleStoreTestCase):
 
         # Create instructor account
         instructor = AdminFactory.create()
-        self.client.login(username=instructor.username, password=self.TEST_PASSWORD)
+        self.client.login(username=instructor.username, password="test")
 
     def tearDown(self):
         super().tearDown()
@@ -148,7 +152,7 @@ class TestNewInstructorDashboardEmailViewXMLBacked(SharedModuleStoreTestCase):
 
         # Create instructor account
         instructor = AdminFactory.create()
-        self.client.login(username=instructor.username, password=self.TEST_PASSWORD)
+        self.client.login(username=instructor.username, password="test")
 
         # URL for instructor dash
         self.url = reverse('instructor_dashboard', kwargs={'course_id': str(self.course_key)})

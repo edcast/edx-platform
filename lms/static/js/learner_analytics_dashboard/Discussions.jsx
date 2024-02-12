@@ -3,7 +3,6 @@ import classNames from 'classnames';
 import PropTypes from 'prop-types';
 
 class Discussions extends React.Component {
-    // eslint-disable-next-line no-useless-constructor
     constructor(props) {
         super(props);
     }
@@ -40,22 +39,17 @@ class Discussions extends React.Component {
         }
         return (
             <div className="count-chart">
-                <div
-                    className={classNames(
-                        'chart-icon',
-                        {'fa fa-graduation-cap': !img}
-                    )}
-                    // eslint-disable-next-line no-extra-boolean-cast
-                    style={{backgroundImage: !!img ? `url(${img})` : 'none'}}
-                    aria-hidden="true"
-                />
+                <div className={classNames(
+                    'chart-icon',
+                    {'fa fa-graduation-cap': !img}
+                )}
+                style={{backgroundImage: !!img ? `url(${img})` : 'none'}}
+                aria-hidden="true"></div>
                 <div className="chart-label">{label}</div>
                 <div className="chart-display">
-                    <div
-                        className="chart-bar"
+                    <div className="chart-bar"
                         aria-hidden="true"
-                        style={{width: `${percentWidth}`}}
-                    />
+                        style={{width: `${percentWidth}`}}></div>
                     <span className="user-count">{count}</span>
                 </div>
             </div>
@@ -74,7 +68,7 @@ class Discussions extends React.Component {
                 </div>
                 <div className="post-counts">
                     <div className="votes-wrapper">
-                        <span className="fa fa-plus-square-o count-icon" aria-hidden="true" />
+                        <span className="fa fa-plus-square-o count-icon" aria-hidden="true"></span>
                         <span className="user-count">{thread_votes}</span>
                         <p className="label">Votes on your posts, comments, and replies</p>
                     </div>
@@ -84,9 +78,10 @@ class Discussions extends React.Component {
     }
 }
 
+
 Discussions.propTypes = {
     content_authored: PropTypes.number.isRequired,
     thread_votes: PropTypes.number.isRequired
-};
+}
 
 export default Discussions;

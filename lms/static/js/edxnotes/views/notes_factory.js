@@ -1,7 +1,5 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(define, undefined) {
     'use strict';
-
     define([
         'jquery', 'underscore', 'annotator_1.2.9',
         'js/edxnotes/utils/logger', 'js/edxnotes/utils/notes_collector',
@@ -24,7 +22,7 @@
      * @param {String} params.token An authentication token.
      * @param {String} params.tokenUrl The URL to request the token from.
      * @return {Object} Options.
-     * */
+     **/
         getOptions = function(element, params) {
             var defaultParams = {
                     user: params.user,
@@ -61,8 +59,7 @@
      * @param {Object} annotator An instance of the annotator.
      * @param {Array} plugins A list of plugins for the annotator.
      * @param {Object} options An options for the annotator.
-     * */
-        // eslint-disable-next-line no-shadow
+     **/
         setupPlugins = function(annotator, plugins, options) {
             _.each(plugins, function(plugin) {
                 var settings = options[plugin.toLowerCase()];
@@ -80,7 +77,7 @@
      * @param {String} params.token An authentication token.
      * @param {String} params.tokenUrl The URL to request the token from.
      * @return {Object} An instance of Annotator.js.
-     * */
+     **/
         getAnnotator = function(element, params) {
             var $el = $(element),
                 options = getOptions($el, params),

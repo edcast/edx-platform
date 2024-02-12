@@ -1,7 +1,5 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(define, undefined) {
     'use strict';
-
     define([
         'jquery',
         'underscore',
@@ -122,6 +120,7 @@
                 this.getLoadingIndicator().addClass('is-hidden');
                 return this;
             },
+
 
             /**
          * Shows error message.

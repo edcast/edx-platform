@@ -71,8 +71,7 @@ from lms.djangoapps.discussion.rest_api.tests.utils import (
 )
 from openedx.core.djangoapps.course_groups.models import CourseUserGroupPartitionGroup
 from openedx.core.djangoapps.course_groups.tests.helpers import CohortFactory
-from openedx.core.djangoapps.discussions.models import DiscussionsConfiguration, DiscussionTopicLink, Provider, \
-    PostingRestriction
+from openedx.core.djangoapps.discussions.models import DiscussionsConfiguration, DiscussionTopicLink, Provider
 from openedx.core.djangoapps.discussions.tasks import update_discussions_settings_from_course_task
 from openedx.core.djangoapps.django_comment_common.models import (
     FORUM_ROLE_ADMINISTRATOR,
@@ -152,9 +151,6 @@ def _set_course_discussion_blackout(course, user_id):
         datetime.now(UTC) - timedelta(days=3),
         datetime.now(UTC) + timedelta(days=3)
     ]
-    configuration = DiscussionsConfiguration.get(course.id)
-    configuration.posting_restrictions = PostingRestriction.SCHEDULED
-    configuration.save()
     modulestore().update_item(course, user_id)
 
 
@@ -194,7 +190,6 @@ class GetCourseTest(ForumsEnableMixin, UrlResetMixin, SharedModuleStoreTestCase)
     def test_basic(self):
         assert get_course(self.request, self.course.id) == {
             'id': str(self.course.id),
-            'is_posting_enabled': True,
             'blackouts': [],
             'thread_list_url': 'http://testserver/api/discussion/v1/threads/?course_id=course-v1%3Ax%2By%2Bz',
             'following_thread_list_url':
@@ -212,6 +207,7 @@ class GetCourseTest(ForumsEnableMixin, UrlResetMixin, SharedModuleStoreTestCase)
             'is_user_admin': False,
             'user_roles': {'Student'},
             'learners_tab_enabled': False,
+            'reason_codes_enabled': False,
             'edit_reasons': [{'code': 'test-edit-reason', 'label': 'Test Edit Reason'}],
             'post_close_reasons': [{'code': 'test-close-reason', 'label': 'Test Close Reason'}],
         }
@@ -1476,14 +1472,6 @@ class GetCommentListTest(ForumsEnableMixin, CommentsServiceMockMixin, SharedModu
                 "anonymous": False,
                 "anonymous_to_peers": False,
                 "last_edit": None,
-                "edit_by_label": None,
-                "profile_image": {
-                    "has_image": False,
-                    "image_url_full": "http://testserver/static/default_500.png",
-                    "image_url_large": "http://testserver/static/default_120.png",
-                    "image_url_medium": "http://testserver/static/default_50.png",
-                    "image_url_small": "http://testserver/static/default_30.png",
-                },
             },
             {
                 "id": "test_comment_2",
@@ -1510,14 +1498,6 @@ class GetCommentListTest(ForumsEnableMixin, CommentsServiceMockMixin, SharedModu
                 "anonymous": True,
                 "anonymous_to_peers": False,
                 "last_edit": None,
-                "edit_by_label": None,
-                "profile_image": {
-                    "has_image": False,
-                    "image_url_full": "http://testserver/static/default_500.png",
-                    "image_url_large": "http://testserver/static/default_120.png",
-                    "image_url_medium": "http://testserver/static/default_50.png",
-                    "image_url_small": "http://testserver/static/default_30.png",
-                },
             },
         ]
         actual_comments = self.get_comment_list(
@@ -2169,7 +2149,6 @@ class CreateThreadTest(
 @disable_signal(api, 'comment_created')
 @disable_signal(api, 'comment_voted')
 @mock.patch.dict("django.conf.settings.FEATURES", {"ENABLE_DISCUSSION_SERVICE": True})
-@mock.patch("lms.djangoapps.discussion.signals.handlers.send_response_notifications", new=mock.Mock())
 class CreateCommentTest(
         ForumsEnableMixin,
         CommentsServiceMockMixin,
@@ -2207,17 +2186,6 @@ class CreateCommentTest(
             "thread_id": "test_thread",
             "raw_body": "Test body",
         }
-
-        mock_response = {
-            'collection': [],
-            'page': 1,
-            'num_pages': 1,
-            'subscriptions_count': 1,
-            'corrected_text': None
-
-        }
-        self.register_get_subscriptions('cohort_thread', mock_response)
-        self.register_get_subscriptions('test_thread', mock_response)
 
     @ddt.data(None, "test_parent")
     @mock.patch("eventtracking.tracker.emit")
@@ -2264,14 +2232,6 @@ class CreateCommentTest(
             "anonymous": False,
             "anonymous_to_peers": False,
             "last_edit": None,
-            "edit_by_label": None,
-            "profile_image": {
-                "has_image": False,
-                "image_url_full": "http://testserver/static/default_500.png",
-                "image_url_large": "http://testserver/static/default_120.png",
-                "image_url_medium": "http://testserver/static/default_50.png",
-                "image_url_small": "http://testserver/static/default_30.png",
-            },
         }
         assert actual == expected
         expected_url = (
@@ -2279,16 +2239,13 @@ class CreateCommentTest(
             "/api/v1/threads/test_thread/comments"
         )
         assert urlparse(httpretty.last_request().path).path == expected_url  # lint-amnesty, pylint: disable=no-member
-
-        data = httpretty.latest_requests()
-        assert parsed_body(data[len(data) - 2]) == {
+        assert parsed_body(httpretty.last_request()) == {
             'course_id': [str(self.course.id)],
             'body': ['Test body'],
             'user_id': [str(self.user.id)],
             'anonymous': ['False'],
             'anonymous_to_peers': ['False'],
         }
-
         expected_event_name = (
             "edx.forum.comment.created" if parent_id else
             "edx.forum.response.created"
@@ -2371,14 +2328,6 @@ class CreateCommentTest(
             "anonymous": False,
             "anonymous_to_peers": False,
             "last_edit": None,
-            "edit_by_label": None,
-            "profile_image": {
-                "has_image": False,
-                "image_url_full": "http://testserver/static/default_500.png",
-                "image_url_large": "http://testserver/static/default_120.png",
-                "image_url_medium": "http://testserver/static/default_50.png",
-                "image_url_small": "http://testserver/static/default_30.png",
-            },
         }
         assert actual == expected
         expected_url = (
@@ -2386,8 +2335,7 @@ class CreateCommentTest(
             "/api/v1/threads/test_thread/comments"
         )
         assert urlparse(httpretty.last_request().path).path == expected_url  # pylint: disable=no-member
-        data = httpretty.latest_requests()
-        assert parsed_body(data[len(data) - 2]) == {
+        assert parsed_body(httpretty.last_request()) == {
             "course_id": [str(self.course.id)],
             "body": ["Test body"],
             "user_id": [str(self.user.id)],
@@ -2736,8 +2684,7 @@ class UpdateThreadTest(
 
     @ddt.data(*itertools.product([True, False], [True, False]))
     @ddt.unpack
-    @mock.patch("eventtracking.tracker.emit")
-    def test_following(self, old_following, new_following, mock_emit):
+    def test_following(self, old_following, new_following):
         """
         Test attempts to edit the "following" field.
 
@@ -2752,12 +2699,7 @@ class UpdateThreadTest(
         self.register_subscription_response(self.user)
         self.register_thread()
         data = {"following": new_following}
-        signal_name = "thread_followed" if new_following else "thread_unfollowed"
-        mock_path = f"openedx.core.djangoapps.django_comment_common.signals.{signal_name}.send"
-        with mock.patch(mock_path) as signal_patch:
-            result = update_thread(self.request, "test_thread", data)
-            if old_following != new_following:
-                self.assertEqual(signal_patch.call_count, 1)
+        result = update_thread(self.request, "test_thread", data)
         assert result['following'] == new_following
         last_request_path = urlparse(httpretty.last_request().path).path  # lint-amnesty, pylint: disable=no-member
         subscription_url = f"/api/v1/users/{self.user.id}/subscriptions"
@@ -2772,13 +2714,6 @@ class UpdateThreadTest(
             )
             request_data.pop("request_id", None)
             assert request_data == {'source_type': ['thread'], 'source_id': ['test_thread']}
-            event_name, event_data = mock_emit.call_args[0]
-            expected_event_action = 'followed' if new_following else 'unfollowed'
-            assert event_name == f'edx.forum.thread.{expected_event_action}'
-            assert event_data['commentable_id'] == 'original_topic'
-            assert event_data['id'] == 'test_thread'
-            assert event_data['followed'] == new_following
-            assert event_data['user_forums_roles'] == ['Student']
 
     @ddt.data(*itertools.product([True, False], [True, False]))
     @ddt.unpack
@@ -3219,14 +3154,6 @@ class UpdateCommentTest(
             "child_count": 0,
             "can_delete": True,
             "last_edit": None,
-            "edit_by_label": None,
-            "profile_image": {
-                "has_image": False,
-                "image_url_full": "http://testserver/static/default_500.png",
-                "image_url_large": "http://testserver/static/default_120.png",
-                "image_url_medium": "http://testserver/static/default_50.png",
-                "image_url_small": "http://testserver/static/default_30.png",
-            },
         }
         assert actual == expected
         assert parsed_body(httpretty.last_request()) == {
@@ -3338,8 +3265,7 @@ class UpdateCommentTest(
         [True, False],
     ))
     @ddt.unpack
-    @mock.patch('openedx.core.djangoapps.django_comment_common.signals.comment_endorsed.send')
-    def test_endorsed_access(self, role_name, is_thread_author, thread_type, is_comment_author, endorsed_mock):
+    def test_endorsed_access(self, role_name, is_thread_author, thread_type, is_comment_author):
         _assign_role_to_user(user=self.user, course_id=self.course.id, role=role_name)
         self.register_comment(
             {"user_id": str(self.user.id if is_comment_author else (self.user.id + 1))},
@@ -3354,7 +3280,6 @@ class UpdateCommentTest(
         )
         try:
             update_comment(self.request, "test_comment", {"endorsed": True})
-            self.assertEqual(endorsed_mock.call_count, 1)
             assert not expected_error
         except ValidationError as err:
             assert expected_error

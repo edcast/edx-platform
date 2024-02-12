@@ -164,8 +164,7 @@ class CohortTarget(Target):
         app_label = "bulk_email"
 
     def __init__(self, *args, **kwargs):
-        if not args:
-            kwargs['target_type'] = SEND_TO_COHORT
+        kwargs['target_type'] = SEND_TO_COHORT
         super().__init__(*args, **kwargs)
 
     def __str__(self):
@@ -210,8 +209,7 @@ class CourseModeTarget(Target):
         app_label = "bulk_email"
 
     def __init__(self, *args, **kwargs):
-        if not args:
-            kwargs['target_type'] = SEND_TO_TRACK
+        kwargs['target_type'] = SEND_TO_TRACK
         super().__init__(*args, **kwargs)
 
     def __str__(self):

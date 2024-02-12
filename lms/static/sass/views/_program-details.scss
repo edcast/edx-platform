@@ -9,11 +9,7 @@ $btn-color-primary: $primary-dark;
 .program-details {
   .content-wrapper {
     max-width: 100%;
-    padding: 0px 20px 10px 20px;
-
-    @include media-breakpoint-up(lg){
-      padding: 0px 20px 10px 40px;
-    }
+    padding-top: 0;
   }
 }
 
@@ -90,21 +86,6 @@ $btn-color-primary: $primary-dark;
   }
 }
 
-.program-details-alerts {
-  .page-banner {
-    margin: 0;
-    padding: 0 0 48px;
-    gap: 24px;
-  }
-}
-
-.program-details-tab-alerts {
-  .page-banner {
-    margin: 0;
-    gap: 24px;
-  }
-}
-
 // CSS for April 2017 version of Program Details Page
 .program-details {
   .window-wrap {
@@ -127,16 +108,20 @@ $btn-color-primary: $primary-dark;
     font-family: 'Open Sans';
     font-weight: normal;
     flex-wrap: wrap;
-    flex-direction: column;
-    padding: 40px 10px 35px 0px;
+    padding: 40px 10px 35px;
 
     @include media-breakpoint-up(md) {
-      flex-direction: row;
-      padding-right: 30px;
+      padding: {
+        left: 30px;
+        right: 30px;
+      }
     }
 
     @media (min-width: map-get($container-max-widths, xl)) {
-      padding-right: calc(((100% - 1180px) / 2) + 30px);
+      padding: {
+        left: calc(((100% - 1180px) / 2) + 30px);
+        right: calc(((100% - 1180px) / 2) + 30px);
+      }
     }
 
     .hd-1 {
@@ -212,12 +197,10 @@ $btn-color-primary: $primary-dark;
 
     .authoring-organizations {
       text-align: center;
-      display: block;
-      padding-left: 24px;
-      width: fit-content;
+      display: flex;
 
       @include media-breakpoint-up(md) {
-        padding-left: 0px;
+        display: block;
       }
 
       .heading {
@@ -233,16 +216,15 @@ $btn-color-primary: $primary-dark;
         }
       }
 
-      .orgs .org-logo {
-        height: 40px;
-      }
-
       @include media-breakpoint-up(md) {
         margin: initial;
         width: 30%;
 
         .orgs .org-logo {
           @include margin-left(2.5%);
+
+          width: 46.5%;
+          height: auto;
         }
       }
 
@@ -254,10 +236,16 @@ $btn-color-primary: $primary-dark;
 
   .program-details-content {
     margin-bottom: 30px;
-    padding-right: 40px;
+    padding: {
+        left: 40px;
+        right: 40px;
+    };
   }
   .tab-content{
       .tab-pane {
+          .program-details-content {
+              padding-left: 40px;
+          }
           .js-program-pathways {
               padding-left: 40px;
           }
@@ -288,8 +276,14 @@ $btn-color-primary: $primary-dark;
 
   .course-list-headings {
     .motivating-section {
+      @include margin-left(15px);
+
       font-size: 0.9375em;
-      width: auto;
+      width: 310px;
+
+      @include media-breakpoint-up(sm) {
+        width: auto;
+      }
 
       .motivating-heading {
         margin-bottom: 0;
@@ -449,45 +443,10 @@ $btn-color-primary: $primary-dark;
     }
   }
 
-  .upgrade-subscription {
-    margin: 16px 0 10px;
-    row-gap: 16px;
-    column-gap: 24px;
-  }
-
-  .subscription-icon-launch {
-    width: 22.5px;
-    height: 22.5px;
-    margin-inline-start: 8px;
-  }
-
-  .subscription-icon-restart {
-    width: 22.5px;
-    height: 22.5px;
-    margin-inline-end: 8px;
-  }
-
-  .subscription-icon-arrow-upright {
-    display: inline-flex;
-    align-items: center;
-    width: 15px;
-    height: 15px;
-    margin-inline-start: 8px;
-  }
-
-  .subscription-info-brief {
-    font-size: 0.9375em;
-    color: $gray-500;
-  }
-
-  .subscription-info-upsell {
-    margin-top: 0.25rem;
-    font-size: 0.8125em;
-  }
 
   .program-course-card {
     width: 100%;
-    padding: 15px 15px 15px 0px;
+    padding: 15px;
 
     @include media-breakpoint-up(md) {
       height: auto;
@@ -679,29 +638,22 @@ $btn-color-primary: $primary-dark;
 
 // CSS for the program sidebar
 .program-sidebar {
-  padding: 40px 40px 40px 0px;
+  padding: $baseline*1.5 $baseline*0.5;
 
-  .program-record,.subscription-info {
+  .program-record {
     text-align: left;
     padding-bottom: 2em;
   }
 
-  .subscription-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    color: #414141;
+  .motivating-section {
+    @include margin-left($baseline*0.75);
 
-    .subscription-link {
-      color: inherit;
-      text-decoration: none;
-      border-bottom: 1px solid currentColor;
-    }
-  }
-
-  .sidebar-section {
     font-size: 0.9375em;
-    width: auto;
+    width: $baseline*15.5;
+
+    @include media-breakpoint-up(sm) {
+      width: auto;
+    }
 
     .motivating-message {
       color: #414141;
@@ -733,10 +685,15 @@ $btn-color-primary: $primary-dark;
     padding-bottom: 2em;
   }
 
-  .pathway-wrapper {   
-    width: auto;
+  .pathway-wrapper {
+    @include margin-left($baseline*0.75);
+
+    width: $baseline*15.5;
     border-bottom: 1px solid $gray-light3;
 
+    @include media-breakpoint-up(sm) {
+      width: auto;
+    }
 
     .pathway-info {
       margin: 15px 0;
@@ -758,7 +715,7 @@ $btn-color-primary: $primary-dark;
     @include float(right);
 
     width: $baseline*15;
-    padding: $baseline*1.5 $baseline*1.5 $baseline*1.5 $baseline*0.5;
+    padding-right: $baseline*1.5;
     position: relative;
   }
 

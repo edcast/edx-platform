@@ -53,7 +53,6 @@ define(['jquery', 'js/discovery/views/search_form'], function($, SearchForm) {
         });
 
         it('shows remote error message', function() {
-            // eslint-disable-next-line prefer-const
             let remoteError = 'some-error-message';
             this.form.showErrorMessage(remoteError);
             expect(this.form.$message).toContainHtml(remoteError);

@@ -14,7 +14,7 @@ class ExternalIDTypeFactory(factory.django.DjangoModelFactory):  # lint-amnesty,
     class Meta:
         model = ExternalIdType
 
-    name = FuzzyChoice([ExternalIdType.CALIPER])
+    name = FuzzyChoice([ExternalIdType.MICROBACHELORS_COACHING])
     description = FuzzyText()
 
 

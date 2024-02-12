@@ -1,14 +1,12 @@
-"""
-Tests for serializers for the MFE Context
-"""
+"""Tests for serializers for the MFE Context"""
 
 from django.test import TestCase
 
-from openedx.core.djangoapps.user_authn.api.tests.data_mock import (
-    MFE_CONTEXT_WITH_TPA_DATA,
-    MFE_CONTEXT_WITHOUT_TPA_DATA,
-    SERIALIZED_MFE_CONTEXT_WITH_TPA_DATA,
-    SERIALIZED_MFE_CONTEXT_WITHOUT_TPA_DATA,
+from openedx.core.djangoapps.user_authn.api.tests.test_data import (
+    mock_mfe_context_data,
+    expected_mfe_context_data,
+    mock_default_mfe_context_data,
+    default_expected_mfe_context_data,
 )
 from openedx.core.djangoapps.user_authn.serializers import MFEContextSerializer
 
@@ -24,12 +22,12 @@ class TestMFEContextSerializer(TestCase):
         """
 
         output_data = MFEContextSerializer(
-            MFE_CONTEXT_WITH_TPA_DATA
+            mock_mfe_context_data
         ).data
 
         self.assertDictEqual(
             output_data,
-            SERIALIZED_MFE_CONTEXT_WITH_TPA_DATA
+            expected_mfe_context_data
         )
 
     def test_mfe_context_serializer_default_response(self):
@@ -37,10 +35,10 @@ class TestMFEContextSerializer(TestCase):
         Test MFEContextSerializer with default data
         """
         serialized_data = MFEContextSerializer(
-            MFE_CONTEXT_WITHOUT_TPA_DATA
+            mock_default_mfe_context_data
         ).data
 
         self.assertDictEqual(
             serialized_data,
-            SERIALIZED_MFE_CONTEXT_WITHOUT_TPA_DATA
+            default_expected_mfe_context_data
         )

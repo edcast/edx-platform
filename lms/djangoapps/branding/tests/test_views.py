@@ -36,6 +36,7 @@ class TestFooter(CacheIsolationTestCase):
         (None, "text/html", "text/html; charset=utf-8", "lms-footer.css"),
         (None, "text/html", "text/html; charset=utf-8", "Open edX"),
     )
+    @skip('we remove view in edcast')
     @ddt.unpack
     def test_footer_content_types(self, theme, accepts, content_type, content):
         self._set_feature_flag(True)
@@ -154,6 +155,8 @@ class TestFooter(CacheIsolationTestCase):
         (None, True),
         (None, False),
     )
+
+    @skip('we remove view in edcast')
     @ddt.unpack
     def test_show_openedx_logo(self, theme, show_logo):
         self._set_feature_flag(True)

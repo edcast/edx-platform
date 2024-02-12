@@ -3,9 +3,6 @@
 from common.djangoapps.student.tests.factories import UserFactory
 
 
-TEST_PASSWORD = "Password1234"
-
-
 class UserMixin:
     """ Mixin for tests involving users. """
 
@@ -15,4 +12,4 @@ class UserMixin:
 
     def _login(self):
         """ Log into LMS. """
-        self.client.login(username=self.user.username, password=TEST_PASSWORD)
+        self.client.login(username=self.user.username, password='test')

@@ -1,7 +1,5 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(define, undefined) {
     'use strict';
-
     define(['gettext', 'underscore',
         'jquery', 'backbone', 'js/edxnotes/utils/template', 'edx-ui-toolkit/js/utils/html-utils'],
     function(gettext, _, $, Backbone, templateUtils, HtmlUtils) {

@@ -1,6 +1,5 @@
 define(['jquery', 'underscore', 'jquery.ajaxQueue'], function($) {
     'use strict';
-
     return (function() {
         var Storage = {};
 
@@ -84,8 +83,7 @@ define(['jquery', 'underscore', 'jquery.ajaxQueue'], function($) {
 
             return function(url) {
                 if (typeof url !== 'string') {
-                    // eslint-disable-next-line no-void
-                    return void 0;
+                    return void(0);
                 }
 
                 if (cache[url]) {
@@ -93,8 +91,7 @@ define(['jquery', 'underscore', 'jquery.ajaxQueue'], function($) {
                 }
 
                 var match = url.match(regExp);
-                // eslint-disable-next-line no-void
-                cache[url] = (match) ? match[1] : void 0;
+                cache[url] = (match) ? match[1] : void(0);
 
                 return cache[url];
             };
@@ -116,8 +113,7 @@ define(['jquery', 'underscore', 'jquery.ajaxQueue'], function($) {
 
             return function(url) {
                 if (typeof url !== 'string') {
-                    // eslint-disable-next-line no-void
-                    return void 0;
+                    return void(0);
                 }
 
                 if (cache[url]) {
@@ -172,8 +168,7 @@ define(['jquery', 'underscore', 'jquery.ajaxQueue'], function($) {
                 result;
 
             if (typeof url !== 'string') {
-                // eslint-disable-next-line no-void
-                return void 0;
+                return void(0);
             }
 
             if (_youtubeParser(url)) {

@@ -30,7 +30,7 @@ from common.djangoapps.student.auth import (
     STUDIO_VIEW_USERS,
     get_user_permissions,
     has_studio_read_access,
-    has_studio_write_access,
+    has_studio_write_access
 )
 from common.djangoapps.student.roles import (
     CourseInstructorRole,
@@ -44,7 +44,7 @@ from common.djangoapps.util.json_request import JsonResponse, JsonResponseBadReq
 from ..config.waffle import REDIRECT_TO_LIBRARY_AUTHORING_MICROFRONTEND
 from ..utils import add_instructor, reverse_library_url
 from .component import CONTAINER_TEMPLATES, get_component_templates
-from cms.djangoapps.contentstore.xblock_storage_handlers.view_handlers import create_xblock_info
+from .block import create_xblock_info
 from .user import user_with_role
 
 __all__ = ['library_handler', 'manage_library_users']
@@ -83,9 +83,8 @@ def user_can_create_library(user, org=None):
         is_course_creator = get_course_creator_status(user) == 'granted'
         has_org_staff_role = OrgStaffRole().get_orgs_for_user(user).exists()
         has_course_staff_role = UserBasedRole(user=user, role=CourseStaffRole.ROLE).courses_with_role().exists()
-        has_course_admin_role = UserBasedRole(user=user, role=CourseInstructorRole.ROLE).courses_with_role().exists()
 
-        return is_course_creator or has_org_staff_role or has_course_staff_role or has_course_admin_role
+        return is_course_creator or has_org_staff_role or has_course_staff_role
     else:
         # EDUCATOR-1924: DISABLE_LIBRARY_CREATION overrides DISABLE_COURSE_CREATION, if present.
         disable_library_creation = settings.FEATURES.get('DISABLE_LIBRARY_CREATION', None)

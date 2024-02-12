@@ -9,7 +9,6 @@ class CourseEnrollModel extends Backbone.Model {
             course_id: '',
             optIn: false,
         };
-        // eslint-disable-next-line prefer-object-spread
         super(Object.assign({}, defaults, attrs), ...args);
     }
 }

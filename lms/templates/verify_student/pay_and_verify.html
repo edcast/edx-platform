@@ -1,7 +1,7 @@
 <%page expression_filter="h"/>
 <%!
 import json
-from django.utils.translation import gettext as _
+from django.utils.translation import ugettext as _
 
 from openedx.core.djangolib.markup import HTML, Text
 from lms.djangoapps.verify_student.views import PayAndVerifyView
@@ -59,7 +59,7 @@ from lms.djangoapps.verify_student.views import PayAndVerifyView
     <div
       id="pay-and-verify-container"
       class="pay-and-verify"
-      data-full-name='${user_full_name}'
+      data-full-name='${user_full_name | h}'
       data-platform-name='${platform_name}'
       data-course-key='${course_key}'
       data-course-name='${course.display_name}'

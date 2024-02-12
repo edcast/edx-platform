@@ -1,6 +1,5 @@
 (function() {
     'use strict';
-
     describe('Bulk Email Queueing', function() {
         beforeEach(function() {
             var testBody, testSubject;
@@ -20,7 +19,6 @@
             this.ajax_params = {
                 type: 'POST',
                 dataType: 'json',
-                // eslint-disable-next-line no-void
                 url: void 0,
                 data: {
                     action: 'send',
@@ -28,9 +26,7 @@
                     subject: testSubject,
                     message: testBody
                 },
-                // eslint-disable-next-line react/forbid-prop-types
                 success: jasmine.any(Function),
-                // eslint-disable-next-line react/forbid-prop-types
                 error: jasmine.any(Function)
             };
             return this.ajax_params;

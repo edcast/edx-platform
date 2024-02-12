@@ -14,9 +14,6 @@ from common.djangoapps.third_party_auth.tests import testutil
 from common.djangoapps.third_party_auth.tests.utils import skip_unless_thirdpartyauth
 
 
-TEST_PASSWORD = 'Password1234'
-
-
 # This is necessary because cms does not implement third party auth
 @skip_unless_thirdpartyauth()
 class Oauth2ProviderConfigAdminTest(testutil.TestCase):
@@ -39,9 +36,9 @@ class Oauth2ProviderConfigAdminTest(testutil.TestCase):
         prepopulated correctly, and that we can clear and update the image.
         """
         # Login as a super user
-        user = UserFactory.create(is_staff=True, is_superuser=True, password=TEST_PASSWORD)
+        user = UserFactory.create(is_staff=True, is_superuser=True)
         user.save()
-        self.client.login(username=user.username, password=TEST_PASSWORD)
+        self.client.login(username=user.username, password='test')
 
         # Get baseline provider count
         providers = OAuth2ProviderConfig.objects.all()

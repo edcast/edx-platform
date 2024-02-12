@@ -7,7 +7,6 @@ Helper function used to require files serially instead of concurrently.
     var requireModules = function(paths, callback, modules) {
         // If all the modules have been loaded, call the callback.
         if (paths.length === 0) {
-            // eslint-disable-next-line prefer-spread
             return callback.apply(null, modules);
         }
         // Otherwise load the next one.

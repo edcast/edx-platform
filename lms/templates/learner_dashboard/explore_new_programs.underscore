@@ -1,7 +1,9 @@
-<p class="advertise-message">
+<div class="advertise-message">
     <%- gettext('Browse recently launched courses and see what\'s new in your favorite subjects') %>
-</p>
-<a href="<%- marketingUrl %>" class="btn-brand btn cta-primary view-button align-self-stretch">
-    <span class="icon fa fa-search" aria-hidden="true"></span>
-    <span><%- gettext('Explore new programs') %></span>
-</a>
+</div>
+<div class="ad-link">
+    <a href="<%- marketingUrl %>" class="btn new-programs-btn">
+        <span class="icon fa fa-search" aria-hidden="true"></span>
+        <span><%- gettext('Explore New Programs') %></span>
+    </a>
+</div>

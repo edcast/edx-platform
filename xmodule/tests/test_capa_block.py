@@ -19,7 +19,7 @@ import webob
 from codejail.safe_exec import SafeExecException
 from django.test import override_settings
 from django.utils.encoding import smart_str
-from lms.djangoapps.courseware.user_state_client import XBlockUserState
+from edx_user_state_client.interface import XBlockUserState
 from lxml import etree
 from opaque_keys.edx.locator import BlockUsageLocator, CourseLocator
 from pytz import UTC
@@ -29,7 +29,6 @@ from xblock.fields import ScopeIds
 from xblock.scorable import Score
 
 import xmodule
-from openedx.core.djangolib.testing.utils import skip_unless_lms
 from xmodule.capa import responsetypes
 from xmodule.capa.correctmap import CorrectMap
 from xmodule.capa.responsetypes import LoncapaProblemError, ResponseError, StudentInputError
@@ -183,7 +182,6 @@ if submission[0] == '':
 
 
 @ddt.ddt
-@skip_unless_lms
 class ProblemBlockTest(unittest.TestCase):  # lint-amnesty, pylint: disable=missing-class-docstring
 
     def setUp(self):
@@ -2494,22 +2492,22 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
         </problem>
     """)
 
-    def _create_block(self, xml, name=None):
+    def _create_descriptor(self, xml, name=None):
         """ Creates a ProblemBlock to run test against """
-        block = CapaFactory.create()
-        block.data = xml
+        descriptor = CapaFactory.create()
+        descriptor.data = xml
         if name:
-            block.display_name = name
-        return block
+            descriptor.display_name = name
+        return descriptor
 
     @ddt.data(*sorted(responsetypes.registry.registered_tags()))
     def test_all_response_types(self, response_tag):
         """ Tests that every registered response tag is correctly returned """
         xml = "<problem><{response_tag}></{response_tag}></problem>".format(response_tag=response_tag)
         name = "Some Capa Problem"
-        block = self._create_block(xml, name=name)
-        assert block.problem_types == {response_tag}
-        assert block.index_dictionary() ==\
+        descriptor = self._create_descriptor(xml, name=name)
+        assert descriptor.problem_types == {response_tag}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': [response_tag],
                 'content': {'display_name': name, 'capa_content': ''}}
@@ -2530,9 +2528,9 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             </problem>
         """)
         name = "Test Capa Problem"
-        block = self._create_block(xml, name=name)
-        assert block.problem_types == {'multiplechoiceresponse'}
-        assert block.index_dictionary() ==\
+        descriptor = self._create_descriptor(xml, name=name)
+        assert descriptor.problem_types == {'multiplechoiceresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['multiplechoiceresponse'],
                 'content': {'display_name': name, 'capa_content': ' Label Some comment Apple Banana Chocolate Donut '}}
@@ -2558,14 +2556,14 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             </problem>
         """)
         name = "Other Test Capa Problem"
-        block = self._create_block(xml, name=name)
-        assert block.problem_types == {'multiplechoiceresponse', 'optionresponse'}
+        descriptor = self._create_descriptor(xml, name=name)
+        assert descriptor.problem_types == {'multiplechoiceresponse', 'optionresponse'}
 
         # We are converting problem_types to a set to compare it later without taking into account the order
         # the reasoning behind is that the problem_types (property) is represented by dict and when it is converted
         # to list its ordering is different everytime.
 
-        indexing_result = block.index_dictionary()
+        indexing_result = descriptor.index_dictionary()
         indexing_result['problem_types'] = set(indexing_result['problem_types'])
         self.assertDictEqual(
             indexing_result, {
@@ -2610,15 +2608,15 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             </problem>
         """)
         name = "Blank Common Capa Problem"
-        block = self._create_block(xml, name=name)
-        assert block.index_dictionary() ==\
+        descriptor = self._create_descriptor(xml, name=name)
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': [],
                 'content': {'display_name': name, 'capa_content': ' '}}
 
     def test_indexing_checkboxes(self):
         name = "Checkboxes"
-        block = self._create_block(self.sample_checkbox_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_checkbox_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             Title
             Description
@@ -2631,30 +2629,30 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             Hungarian
             Note: Make sure you select all of the correct options—there may be more than one!
         """)
-        assert block.problem_types == {'choiceresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'choiceresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['choiceresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
 
     def test_indexing_dropdown(self):
         name = "Dropdown"
-        block = self._create_block(self.sample_dropdown_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_dropdown_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             Dropdown problems allow learners to select only one option from a list of options.
             Description
             You can use the following example problem as a model.
             Which of the following countries celebrates its independence on August 15? 'India','Spain','China','Bermuda'
         """)
-        assert block.problem_types == {'optionresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'optionresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['optionresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
 
     def test_indexing_multiple_choice(self):
         name = "Multiple Choice"
-        block = self._create_block(self.sample_multichoice_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_multichoice_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             Multiple choice problems allow learners to select only one option.
             When you add the problem, be sure to select Settings to specify a Display Name and other values.
@@ -2665,15 +2663,15 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             Indonesia
             Russia
         """)
-        assert block.problem_types == {'multiplechoiceresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'multiplechoiceresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['multiplechoiceresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
 
     def test_indexing_numerical_input(self):
         name = "Numerical Input"
-        block = self._create_block(self.sample_numerical_input_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_numerical_input_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             In a numerical input problem, learners enter numbers or a specific and relatively simple mathematical
             expression. Learners enter the response in plain text, and the system then converts the text to a symbolic
@@ -2687,15 +2685,15 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             How many miles away from Earth is the sun? Use scientific notation to answer.
             The square of what number is -100?
         """)
-        assert block.problem_types == {'numericalresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'numericalresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['numericalresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
 
     def test_indexing_text_input(self):
         name = "Text Input"
-        block = self._create_block(self.sample_text_input_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_text_input_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             In text input problems, also known as "fill-in-the-blank" problems, learners enter text into a response
             field. The text can include letters and characters such as punctuation marks. The text that the learner
@@ -2706,8 +2704,8 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             You can use the following example problem as a model.
             What was the first post-secondary school in China to allow both male and female students?
         """)
-        assert block.problem_types == {'stringresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'stringresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['stringresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
@@ -2720,15 +2718,15 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             </problem>
         """)
         name = "Non latin Input"
-        block = self._create_block(sample_text_input_problem_xml, name=name)
+        descriptor = self._create_descriptor(sample_text_input_problem_xml, name=name)
         capa_content = " Δοκιμή με μεταβλητές με Ελληνικούς χαρακτήρες μέσα σε python: $FX1_VAL "
 
-        block_dict = block.index_dictionary()
-        assert block_dict['content']['capa_content'] == smart_str(capa_content)
+        descriptor_dict = descriptor.index_dictionary()
+        assert descriptor_dict['content']['capa_content'] == smart_str(capa_content)
 
     def test_indexing_checkboxes_with_hints_and_feedback(self):
         name = "Checkboxes with Hints and Feedback"
-        block = self._create_block(self.sample_checkboxes_with_hints_and_feedback_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_checkboxes_with_hints_and_feedback_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             You can provide feedback for each option in a checkbox problem, with distinct feedback depending on
             whether or not the learner selects that option.
@@ -2744,15 +2742,15 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             potato
             tomato
         """)
-        assert block.problem_types == {'choiceresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'choiceresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['choiceresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
 
     def test_indexing_dropdown_with_hints_and_feedback(self):
         name = "Dropdown with Hints and Feedback"
-        block = self._create_block(self.sample_dropdown_with_hints_and_feedback_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_dropdown_with_hints_and_feedback_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             You can provide feedback for each available option in a dropdown problem.
             You can also add hints for learners.
@@ -2764,15 +2762,15 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             potato
             tomato
         """)
-        assert block.problem_types == {'optionresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'optionresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['optionresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
 
     def test_indexing_multiple_choice_with_hints_and_feedback(self):
         name = "Multiple Choice with Hints and Feedback"
-        block = self._create_block(self.sample_multichoice_with_hints_and_feedback_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_multichoice_with_hints_and_feedback_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             You can provide feedback for each option in a multiple choice problem.
             You can also add hints for learners.
@@ -2784,15 +2782,15 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             potato
             tomato
         """)
-        assert block.problem_types == {'multiplechoiceresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'multiplechoiceresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['multiplechoiceresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
 
     def test_indexing_numerical_input_with_hints_and_feedback(self):
         name = "Numerical Input with Hints and Feedback"
-        block = self._create_block(self.sample_numerical_input_with_hints_and_feedback_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_numerical_input_with_hints_and_feedback_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             You can provide feedback for correct answers in numerical input problems. You cannot provide feedback
             for incorrect answers.
@@ -2802,15 +2800,15 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             Use the following example problem as a model.
             What is the arithmetic mean for the following set of numbers? (1, 5, 6, 3, 5)
         """)
-        assert block.problem_types == {'numericalresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'numericalresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['numericalresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
 
     def test_indexing_text_input_with_hints_and_feedback(self):
         name = "Text Input with Hints and Feedback"
-        block = self._create_block(self.sample_text_input_with_hints_and_feedback_problem_xml, name=name)
+        descriptor = self._create_descriptor(self.sample_text_input_with_hints_and_feedback_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             You can provide feedback for the correct answer in text input problems, as well as for specific
             incorrect answers.
@@ -2820,8 +2818,8 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             Use the following example problem as a model.
             Which U.S. state has the largest land area?
         """)
-        assert block.problem_types == {'stringresponse'}
-        assert block.index_dictionary() ==\
+        assert descriptor.problem_types == {'stringresponse'}
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': ['stringresponse'],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
@@ -2842,12 +2840,12 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             </problem>
         """)
         name = "Mixed business"
-        block = self._create_block(sample_problem_xml, name=name)
+        descriptor = self._create_descriptor(sample_problem_xml, name=name)
         capa_content = textwrap.dedent("""
             This has HTML comment in it.
             HTML end.
         """)
-        assert block.index_dictionary() ==\
+        assert descriptor.index_dictionary() ==\
                {'content_type': ProblemBlock.INDEX_CONTENT_TYPE,
                 'problem_types': [],
                 'content': {'display_name': name, 'capa_content': capa_content.replace('\n', ' ')}}
@@ -2862,7 +2860,7 @@ class ProblemBlockXMLTest(unittest.TestCase):  # lint-amnesty, pylint: disable=m
             </proble-oh no my finger broke and I can't close the problem tag properly...
         """)
         with pytest.raises(etree.XMLSyntaxError):
-            self._create_block(sample_invalid_xml, name="Invalid XML")
+            self._create_descriptor(sample_invalid_xml, name="Invalid XML")
 
     def test_invalid_dropdown_xml(self):
         """
@@ -2900,7 +2898,6 @@ class ComplexEncoderTest(unittest.TestCase):  # lint-amnesty, pylint: disable=mi
         # ignore quotes
 
 
-@skip_unless_lms
 class ProblemCheckTrackingTest(unittest.TestCase):
     """
     Ensure correct tracking information is included in events emitted during problem checks.
@@ -3229,29 +3226,29 @@ class ProblemBlockReportGenerationTest(unittest.TestCase):
             scope=None,
         )
 
-    def _get_block(self):  # lint-amnesty, pylint: disable=missing-function-docstring
+    def _get_descriptor(self):  # lint-amnesty, pylint: disable=missing-function-docstring
         scope_ids = Mock(block_type='problem')
-        block = ProblemBlock(get_test_system(), scope_ids=scope_ids)
-        block.runtime = Mock()
-        block.data = '<problem/>'
-        return block
+        descriptor = ProblemBlock(get_test_system(), scope_ids=scope_ids)
+        descriptor.runtime = Mock()
+        descriptor.data = '<problem/>'
+        return descriptor
 
     def test_generate_report_data_not_implemented(self):
         scope_ids = Mock(block_type='noproblem')
-        block = ProblemBlock(get_test_system(), scope_ids=scope_ids)
+        descriptor = ProblemBlock(get_test_system(), scope_ids=scope_ids)
         with pytest.raises(NotImplementedError):
-            next(block.generate_report_data(iter([])))
+            next(descriptor.generate_report_data(iter([])))
 
     def test_generate_report_data_limit_responses(self):
-        block = self._get_block()
-        report_data = list(block.generate_report_data(self._mock_user_state_generator(), 2))
+        descriptor = self._get_descriptor()
+        report_data = list(descriptor.generate_report_data(self._mock_user_state_generator(), 2))
         assert 2 == len(report_data)
 
     def test_generate_report_data_dont_limit_responses(self):
-        block = self._get_block()
+        descriptor = self._get_descriptor()
         user_count = 5
         response_count = 10
-        report_data = list(block.generate_report_data(
+        report_data = list(descriptor.generate_report_data(
             self._mock_user_state_generator(
                 user_count=user_count,
                 response_count=response_count,
@@ -3260,17 +3257,17 @@ class ProblemBlockReportGenerationTest(unittest.TestCase):
         assert (user_count * response_count) == len(report_data)
 
     def test_generate_report_data_skip_dynamath(self):
-        block = self._get_block()
+        descriptor = self._get_descriptor()
         iterator = iter([self._user_state(suffix='_dynamath')])
-        report_data = list(block.generate_report_data(iterator))
+        report_data = list(descriptor.generate_report_data(iterator))
         assert 0 == len(report_data)
 
     def test_generate_report_data_report_loncapa_error(self):
         #Test to make sure reports continue despite loncappa errors, and write them into the report.
-        block = self._get_block()
+        descriptor = self._get_descriptor()
         with patch('xmodule.capa_block.LoncapaProblem') as mock_LoncapaProblem:
             mock_LoncapaProblem.side_effect = LoncapaProblemError
-            report_data = list(block.generate_report_data(
+            report_data = list(descriptor.generate_report_data(
                 self._mock_user_state_generator(
                     user_count=1,
                     response_count=5,

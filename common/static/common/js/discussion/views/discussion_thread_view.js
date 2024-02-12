@@ -4,7 +4,6 @@
 */
 (function() {
     'use strict';
-
     var __hasProp = {}.hasOwnProperty,
         __extends = function(child, parent) {
             for (var key in parent) {
@@ -85,7 +84,6 @@
                 this.context = options.context || 'course';
                 this.options = _.extend({}, options);
                 this.startHeader = options.startHeader;
-                // eslint-disable-next-line no-cond-assign
                 if ((_ref = this.mode) !== 'tab' && _ref !== 'inline') {
                     throw new Error('invalid mode: ' + this.mode);
                 }
@@ -189,7 +187,6 @@
                     ),
                     data: {
                         resp_skip: this.responses.size(),
-                        // eslint-disable-next-line no-void
                         resp_limit: responseLimit || void 0
                     },
                     $elem: $elem,
@@ -207,9 +204,9 @@
                             self.isQuestion() ? data.content.non_endorsed_responses : data.content.children
                         );
                         self.renderResponseCountAndPagination(
-                            self.isQuestion()
-                                ? data.content.non_endorsed_resp_total
-                                : data.content.resp_total
+                            self.isQuestion() ?
+                                data.content.non_endorsed_resp_total :
+                                data.content.resp_total
                         );
                         self.trigger('thread:responses:rendered');
                         self.loadedResponses = true;
@@ -456,7 +453,6 @@
                 if (!this.model.can('can_delete')) {
                     return;
                 }
-                // eslint-disable-next-line no-alert
                 if (!confirm(gettext('Are you sure you want to delete this post?'))) {
                     return;
                 }

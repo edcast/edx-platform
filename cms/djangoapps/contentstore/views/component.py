@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponseBadRequest
-from django.shortcuts import redirect
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET
 from opaque_keys import InvalidKeyError
@@ -25,24 +24,15 @@ from common.djangoapps.edxmako.shortcuts import render_to_response
 from common.djangoapps.student.auth import has_course_author_access
 from common.djangoapps.xblock_django.api import authorable_xblocks, disabled_xblocks
 from common.djangoapps.xblock_django.models import XBlockStudioConfigurationFlag
-from cms.djangoapps.contentstore.toggles import (
-    use_new_problem_editor,
-    use_tagging_taxonomy_list_page,
-)
+from cms.djangoapps.contentstore.toggles import use_new_problem_editor
 from openedx.core.lib.xblock_utils import get_aside_from_xblock, is_xblock_aside
 from openedx.core.djangoapps.discussions.models import DiscussionsConfiguration
-from openedx.core.djangoapps.content_staging import api as content_staging_api
-from openedx.core.djangoapps.content_tagging.api import get_content_tags
 from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.modulestore.exceptions import ItemNotFoundError  # lint-amnesty, pylint: disable=wrong-import-order
-from ..toggles import use_new_unit_page
-from ..utils import get_lms_link_for_item, get_sibling_urls, reverse_course_url, get_unit_url
-from ..helpers import get_parent_xblock, is_unit, xblock_type_display_name
-from cms.djangoapps.contentstore.xblock_storage_handlers.view_handlers import (
-    add_container_page_publishing_info,
-    create_xblock_info,
-    load_services_for_studio,
-)
+
+from ..utils import get_lms_link_for_item, get_sibling_urls, reverse_course_url
+from .helpers import get_parent_xblock, is_unit, xblock_type_display_name
+from .block import StudioEditModuleRuntime, add_container_page_publishing_info, create_xblock_info
 
 __all__ = [
     'container_handler',
@@ -52,7 +42,8 @@ __all__ = [
 log = logging.getLogger(__name__)
 
 # NOTE: This list is disjoint from ADVANCED_COMPONENT_TYPES
-COMPONENT_TYPES = ['discussion', 'library', 'html', 'openassessment', 'problem', 'video', 'drag-and-drop-v2']
+# Overwride for savannah to hide edx discussion unit
+COMPONENT_TYPES = ['library', 'html', 'openassessment', 'problem', 'video', 'drag-and-drop-v2']
 
 ADVANCED_COMPONENT_TYPES = sorted({name for name, class_ in XBlock.load_classes()} - set(COMPONENT_TYPES))
 
@@ -65,7 +56,7 @@ CONTAINER_TEMPLATES = [
     "editor-mode-button", "upload-dialog",
     "add-xblock-component", "add-xblock-component-button", "add-xblock-component-menu",
     "add-xblock-component-support-legend", "add-xblock-component-support-level", "add-xblock-component-menu-problem",
-    "xblock-string-field-editor", "xblock-access-editor", "publish-xblock", "publish-history", "tag-list",
+    "xblock-string-field-editor", "xblock-access-editor", "publish-xblock", "publish-history",
     "unit-outline", "container-message", "container-access", "license-selector", "copy-clipboard-button",
     "edit-title-button",
 ]
@@ -113,7 +104,7 @@ def _load_mixed_class(category):
 
 @require_GET
 @login_required
-def container_handler(request, usage_key_string):  # pylint: disable=too-many-statements
+def container_handler(request, usage_key_string):
     """
     The restful handler for container xblock requests.
 
@@ -132,6 +123,7 @@ def container_handler(request, usage_key_string):  # pylint: disable=too-many-st
                 course, xblock, lms_link, preview_lms_link = _get_item_in_course(request, usage_key)
             except ItemNotFoundError:
                 return HttpResponseBadRequest()
+
             component_templates = get_component_templates(course)
             ancestor_xblocks = []
             parent = get_parent_xblock(xblock)
@@ -139,9 +131,6 @@ def container_handler(request, usage_key_string):  # pylint: disable=too-many-st
 
             is_unit_page = is_unit(xblock)
             unit = xblock if is_unit_page else None
-
-            if is_unit_page and use_new_unit_page(course.id):
-                return redirect(get_unit_url(course.id, unit.location))
 
             is_first = True
             block = xblock
@@ -182,14 +171,9 @@ def container_handler(request, usage_key_string):  # pylint: disable=too-many-st
             prev_url = quote_plus(prev_url) if prev_url else None
             next_url = quote_plus(next_url) if next_url else None
 
-            show_unit_tags = use_tagging_taxonomy_list_page()
-            unit_tags = None
-            if show_unit_tags and is_unit_page:
-                unit_tags = get_unit_tags(usage_key)
-
             # Fetch the XBlock info for use by the container page. Note that it includes information
             # about the block's ancestors and siblings for use by the Unit Outline.
-            xblock_info = create_xblock_info(xblock, include_ancestor_info=is_unit_page, tags=unit_tags)
+            xblock_info = create_xblock_info(xblock, include_ancestor_info=is_unit_page)
 
             if is_unit_page:
                 add_container_page_publishing_info(xblock, xblock_info)
@@ -202,11 +186,6 @@ def container_handler(request, usage_key_string):  # pylint: disable=too-many-st
                     break
                 index += 1
 
-            # Get the status of the user's clipboard so they can paste components if they have something to paste
-            user_clipboard = content_staging_api.get_user_clipboard_json(request.user.id, request)
-            library_block_types = [problem_type['component'] for problem_type in LIBRARY_BLOCK_TYPES]
-            is_library_xblock = xblock.location.block_type in library_block_types
-
             return render_to_response('container.html', {
                 'language_code': request.LANGUAGE_CODE,
                 'context_course': course,  # Needed only for display of menus at top of page.
@@ -215,7 +194,6 @@ def container_handler(request, usage_key_string):  # pylint: disable=too-many-st
                 'xblock_locator': xblock.location,
                 'unit': unit,
                 'is_unit_page': is_unit_page,
-                'is_collapsible': is_library_xblock,
                 'subsection': subsection,
                 'section': section,
                 'position': index,
@@ -228,11 +206,7 @@ def container_handler(request, usage_key_string):  # pylint: disable=too-many-st
                 'xblock_info': xblock_info,
                 'draft_preview_link': preview_lms_link,
                 'published_preview_link': lms_link,
-                'templates': CONTAINER_TEMPLATES,
-                'show_unit_tags': show_unit_tags,
-                # Status of the user's clipboard, exactly as would be returned from the "GET clipboard" REST API.
-                'user_clipboard': user_clipboard,
-                'is_fullwidth_content': is_library_xblock,
+                'templates': CONTAINER_TEMPLATES
             })
     else:
         return HttpResponseBadRequest("Only supports HTML requests")
@@ -344,14 +318,11 @@ def get_component_templates(courselike, library=False):  # lint-amnesty, pylint:
             # TODO: Once mixins are defined per-application, rather than per-runtime,
             # this should use a cms mixed-in class. (cpennington)
             template_id = None
-            display_name = xblock_type_display_name(category, _('Blank'))
+            display_name = xblock_type_display_name(category, _('Blank'))  # this is the Blank Advanced problem
             # The ORA "blank" assessment should be Peer Assessment Only
             if category == 'openassessment':
                 display_name = _("Peer Assessment Only")
                 template_id = "peer-assessment"
-            elif category == 'problem':
-                # Override generic "Problem" name to describe this blank template:
-                display_name = _("Blank Problem")
             templates_for_category.append(
                 create_template_dict(display_name, category, support_level_without_template, template_id, 'advanced')
             )
@@ -481,6 +452,16 @@ def get_component_templates(courselike, library=False):  # lint-amnesty, pylint:
     advanced_component_types = _advanced_component_types(allow_unsupported)
     # Set component types according to course policy file
     if isinstance(course_advanced_keys, list):
+
+        # Automatically include 'edcastxforum' inside the course_advanced_keys
+        # list if it does not exist already, but only if edcastxforum is importable
+        try:
+            import edcastxforum
+            if not 'edcastxforum' in course_advanced_keys:
+                course_advanced_keys.append('edcastxforum')
+        except ImportError:
+            pass
+
         for category in course_advanced_keys:
             if category in advanced_component_types.keys() and category not in categories:  # pylint: disable=consider-iterating-dictionary
                 # boilerplates not supported for advanced components
@@ -582,18 +563,18 @@ def component_handler(request, usage_key_string, handler, suffix=''):
 
     try:
         if is_xblock_aside(usage_key):
-            # Get the block being wrapped by the aside (not the aside itself)
-            block = modulestore().get_item(usage_key.usage_key)
-            handler_block = get_aside_from_xblock(block, usage_key.aside_type)
-            asides = [handler_block]
+            # Get the descriptor for the block being wrapped by the aside (not the aside itself)
+            descriptor = modulestore().get_item(usage_key.usage_key)
+            handler_descriptor = get_aside_from_xblock(descriptor, usage_key.aside_type)
+            asides = [handler_descriptor]
         else:
-            block = modulestore().get_item(usage_key)
-            handler_block = block
+            descriptor = modulestore().get_item(usage_key)
+            handler_descriptor = descriptor
             asides = []
-        load_services_for_studio(handler_block.runtime, request.user)
-        resp = handler_block.handle(handler, req, suffix)
+        handler_descriptor.xmodule_runtime = StudioEditModuleRuntime(request.user)
+        resp = handler_descriptor.handle(handler, req, suffix)
     except NoSuchHandlerError:
-        log.info("XBlock %s attempted to access missing handler %r", handler_block, handler, exc_info=True)
+        log.info("XBlock %s attempted to access missing handler %r", handler_descriptor, handler, exc_info=True)
         raise Http404  # lint-amnesty, pylint: disable=raise-missing-from
 
     # unintentional update to handle any side effects of handle call
@@ -602,7 +583,7 @@ def component_handler(request, usage_key_string, handler, suffix=''):
     # TNL 101-62 studio write permission is also checked for editing content.
 
     if has_course_author_access(request.user, usage_key.course_key):
-        modulestore().update_item(block, request.user.id, asides=asides)
+        modulestore().update_item(descriptor, request.user.id, asides=asides)
     else:
         #fail quietly if user is not course author.
         log.warning(
@@ -613,84 +594,3 @@ def component_handler(request, usage_key_string, handler, suffix=''):
         )
 
     return webob_to_django_response(resp)
-
-
-def get_unit_tags(usage_key):
-    """
-    Get the tags of a Unit and build a json to be read by the UI
-
-    Note: When migrating the `TagList` subview from `container_subview.js` to the course-authoring MFE,
-    this function can be simplified to use the REST API of openedx-learning,
-    which already provides this grouping + sorting logic.
-    """
-    # Get content tags from content tagging API
-    content_tags = get_content_tags(usage_key)
-
-    # Group content tags by taxonomy
-    taxonomy_dict = {}
-    for content_tag in content_tags:
-        taxonomy_id = content_tag.taxonomy_id
-        # When a taxonomy is deleted, the id here is None.
-        # In that case the tag is not shown in the UI.
-        if taxonomy_id:
-            if taxonomy_id not in taxonomy_dict:
-                taxonomy_dict[taxonomy_id] = []
-            taxonomy_dict[taxonomy_id].append(content_tag)
-
-    taxonomy_list = []
-    total_count = 0
-
-    def handle_tag(tags, root_ids, tag, child_tag_id=None):
-        """
-        Group each tag by parent to build a tree.
-        """
-        tag_processed_before = tag.id in tags
-        if not tag_processed_before:
-            tags[tag.id] = {
-                'id': tag.id,
-                'value': tag.value,
-                'children': [],
-            }
-        if child_tag_id:
-            # Add a child into the children list
-            tags[tag.id].get('children').append(tags[child_tag_id])
-        if tag.parent_id is None:
-            if tag.id not in root_ids:
-                root_ids.append(tag.id)
-        elif not tag_processed_before:
-            # Group all the lineage of this tag.
-            #
-            # Skip this if the tag has been processed before,
-            # we don't need to process lineage again to avoid duplicates.
-            handle_tag(tags, root_ids, tag.parent, tag.id)
-
-    # Build a tag tree for each taxonomy
-    for content_tag_list in taxonomy_dict.values():
-        tags = {}
-        root_ids = []
-
-        for content_tag in content_tag_list:
-            # When a tag is deleted from the taxonomy, the `tag` here is None.
-            # In that case the tag is not shown in the UI.
-            if content_tag.tag:
-                handle_tag(tags, root_ids, content_tag.tag)
-
-        taxonomy = content_tag_list[0].taxonomy
-
-        if tags:
-            count = len(tags)
-            # Add the tree to the taxonomy list
-            taxonomy_list.append({
-                'id': taxonomy.id,
-                'value': taxonomy.name,
-                'tags': [tags[tag_id] for tag_id in root_ids],
-                'count': count,
-            })
-            total_count += count
-
-    unit_tags = {
-        'count': total_count,
-        'taxonomies': taxonomy_list,
-    }
-
-    return unit_tags

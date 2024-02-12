@@ -1,6 +1,5 @@
 (function(define) {
     'use strict';
-
     define('video/04_video_full_screen.js', ['edx-ui-toolkit/js/utils/html-utils'], function(HtmlUtils) {
         var template = [
             '<button class="control add-fullscreen" aria-disabled="false" title="',
@@ -171,12 +170,12 @@
                     payload: {
                         open: fullscreenOpen
                     }
-                }, document.referrer
+                  }, document.referrer
                 );
             }
         }
 
-        /**
+    /**
      * Event handler to toggle fullscreen mode.
      * @param {jquery Event} event
      */
@@ -193,7 +192,6 @@
                 return;
             }
 
-            // eslint-disable-next-line no-multi-assign
             this.videoFullScreen.fullScreenState = this.isFullScreen = false;
             fullScreenClassNameEl.removeClass('video-fullscreen');
             $(window).scrollTop(this.scrollPos);
@@ -222,7 +220,6 @@
 
             this.videoFullScreen.notifyParent(true);
 
-            // eslint-disable-next-line no-multi-assign
             this.videoFullScreen.fullScreenState = this.isFullScreen = true;
             fullScreenClassNameEl.addClass('video-fullscreen');
             this.videoFullScreen.fullScreenEl

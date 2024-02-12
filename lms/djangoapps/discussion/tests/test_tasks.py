@@ -126,7 +126,6 @@ class TaskTestCase(ModuleStoreTestCase):  # lint-amnesty, pylint: disable=missin
             'parent_id': None,
             'user_id': cls.comment_author.id,
             'username': cls.comment_author.username,
-            'course_id': str(cls.course.id),
         }
         cls.discussion_comment2 = {
             'id': 'discussion-comment2',
@@ -135,8 +134,7 @@ class TaskTestCase(ModuleStoreTestCase):  # lint-amnesty, pylint: disable=missin
             'thread_id': cls.discussion_thread['id'],
             'parent_id': None,
             'user_id': cls.comment_author.id,
-            'username': cls.comment_author.username,
-            'course_id': str(cls.course.id)
+            'username': cls.comment_author.username
         }
         cls.discussion_subcomment = {
             'id': 'discussion-subcomment',
@@ -146,7 +144,6 @@ class TaskTestCase(ModuleStoreTestCase):  # lint-amnesty, pylint: disable=missin
             'parent_id': cls.discussion_comment['id'],
             'user_id': cls.comment_author.id,
             'username': cls.comment_author.username,
-            'course_id': str(cls.course.id),
         }
         cls.discussion_thread['children'] = [cls.discussion_comment, cls.discussion_comment2]
         cls.discussion_comment['child_count'] = 1
@@ -179,7 +176,6 @@ class TaskTestCase(ModuleStoreTestCase):  # lint-amnesty, pylint: disable=missin
             'parent_id': None,
             'user_id': cls.comment_author.id,
             'username': cls.comment_author.username,
-            'course_id': str(cls.course.id),
         }
         cls.question_comment2 = {
             'id': 'question-comment2',
@@ -188,8 +184,7 @@ class TaskTestCase(ModuleStoreTestCase):  # lint-amnesty, pylint: disable=missin
             'thread_id': cls.question_thread['id'],
             'parent_id': None,
             'user_id': cls.comment_author.id,
-            'username': cls.comment_author.username,
-            'course_id': str(cls.course.id),
+            'username': cls.comment_author.username
         }
         cls.question_subcomment = {
             'id': 'question-subcomment',
@@ -199,7 +194,6 @@ class TaskTestCase(ModuleStoreTestCase):  # lint-amnesty, pylint: disable=missin
             'parent_id': cls.question_comment['id'],
             'user_id': cls.comment_author.id,
             'username': cls.comment_author.username,
-            'course_id': str(cls.course.id),
         }
         cls.question_thread['endorsed_responses'] = [cls.question_comment]
         cls.question_thread['non_endorsed_responses'] = [cls.question_comment2]
@@ -262,9 +256,8 @@ class TaskTestCase(ModuleStoreTestCase):  # lint-amnesty, pylint: disable=missin
             )
             user = mock.Mock()
             comment = cc.Comment.find(id=comment['id']).retrieve()
-            with mock.patch('lms.djangoapps.discussion.rest_api.tasks.send_response_notifications.apply_async'):
-                with mock.patch('lms.djangoapps.discussion.signals.handlers.get_current_site', return_value=site):
-                    comment_created.send(sender=None, user=user, post=comment)
+            with mock.patch('lms.djangoapps.discussion.signals.handlers.get_current_site', return_value=site):
+                comment_created.send(sender=None, user=user, post=comment)
 
             if user_subscribed:
                 expected_message_context = get_base_template_context(site)
@@ -317,8 +310,7 @@ class TaskTestCase(ModuleStoreTestCase):  # lint-amnesty, pylint: disable=missin
         )
         user = mock.Mock()
         comment = cc.Comment.find(id=comment_dict['id']).retrieve()
-        with mock.patch('lms.djangoapps.discussion.rest_api.tasks.send_response_notifications.apply_async'):
-            comment_created.send(sender=None, user=user, post=comment)
+        comment_created.send(sender=None, user=user, post=comment)
 
         actual_result = _should_send_message({
             'thread_author_id': self.thread_author.id,

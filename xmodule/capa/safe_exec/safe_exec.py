@@ -1,10 +1,14 @@
 """Capa's specialized use of codejail.safe_exec."""
+
+
 import hashlib
 
 from codejail.safe_exec import SafeExecException, json_safe
 from codejail.safe_exec import not_safe_exec as codejail_not_safe_exec
 from codejail.safe_exec import safe_exec as codejail_safe_exec
 from edx_django_utils.monitoring import function_trace
+import six
+from six import text_type
 
 from . import lazymod
 from .remote_exec import is_codejail_rest_service_enabled, get_remote_exec
@@ -66,7 +70,7 @@ def update_hash(hasher, obj):
     `obj` in the process.  Only primitive JSON-safe types are supported.
 
     """
-    hasher.update(str(type(obj)).encode())
+    hasher.update(six.b(str(type(obj))))
     if isinstance(obj, (tuple, list)):
         for e in obj:
             update_hash(hasher, e)
@@ -75,7 +79,7 @@ def update_hash(hasher, obj):
             update_hash(hasher, k)
             update_hash(hasher, obj[k])
     else:
-        hasher.update(repr(obj).encode())
+        hasher.update(six.b(repr(obj)))
 
 
 @function_trace('safe_exec')
@@ -174,7 +178,7 @@ def safe_exec(
         except SafeExecException as e:
             # Saving SafeExecException e in exception to be used later.
             exception = e
-            emsg = str(e)
+            emsg = text_type(e)
         else:
             emsg = None
 

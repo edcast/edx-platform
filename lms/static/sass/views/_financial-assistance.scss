@@ -3,46 +3,42 @@
 
   padding: ($baseline/2) 0;
   margin: 0;
-  color: $gray-500;
+  color: $m-gray-d2;
 }
 
 .financial-assistance-wrapper {
+  margin: auto;
   padding: $baseline ($baseline/2);
-  max-width: 1248px;
+  max-width: 1180px;
 
   h1 {
-    @extend %t-title3;
-    @extend %t-ultrastrong;
+    @extend %t-title4;
 
     @include text-align(left);
 
     margin: 0;
     padding: ($baseline/2) 0;
-    color: $black;
+    border-bottom: 4px solid $gray-l5;
+    color: $m-gray-d3;
   }
 
   h2 {
-    @extend %t-title4;
-    @extend %t-ultrastrong;
+    @extend %t-title6;
+    @extend %t-strong;
 
     margin-top: ($baseline/2);
     text-transform: none;
-    color: $black;
   }
 
   p {
-    line-height: $base-line-height;
-    margin-top: 0;
-    color: $gray-700;
-    font-size: 1em;
-  }
+    @extend %fa-copy;
 
-  span {
-    color: $gray-700;
+    font-size: 0.875em;
   }
 
   .financial-assistance {
     padding-bottom: ($baseline/2);
+    border-bottom: 4px solid $gray-l5;
 
     .apply-form-list {
       padding: 0;
@@ -74,36 +70,29 @@
     }
   }
 
-  #financial-assistance-course-desc {
-    padding-bottom: 1rem;
-  }
-
-  .plaintext-certify-heading .plaintext-field.honor_tos_combined {
-    font-size: 1rem !important;
-  }
-
   .financial-assistance-footer {
     padding: $baseline;
-    margin-bottom: 1rem;
+
+    .faq-link {
+      padding: $baseline/2;
+    }
 
     .action-link {
-      float: right;
-      font-weight: 500;
-    }
-  }
+      @include float(right);
 
-  .financial-assistance-header {
-    p:nth-child(4) {
-      margin-top: 1rem;
+      padding: $baseline/2;
+      background-color: $m-blue-d2;
+      color: $gray-l7;
+      border-radius: 2px;
     }
   }
 
   // Application form View
   .intro {
-    margin-bottom: 2rem;
+    border-bottom: 4px solid $gray-l5;
 
-    p:nth-child(4) {
-      margin-top: 1rem;
+    p {
+      margin: 10px 0;
     }
   }
 
@@ -128,6 +117,8 @@
   .user-info {
     @include clearfix();
 
+    border-bottom: 2px solid $gray-l5;
+    padding: 20px 0;
     margin-bottom: 20px;
 
     .info-column {
@@ -152,15 +143,14 @@
 
       padding: 0;
       color: $black;
+      font-size: 1.125em;
     }
   }
 
   .financial-assistance-form {
     @extend .login-register;
 
-    max-width: 1248px;
-    padding: 0;
-    margin: inherit;
+    max-width: 800px;
 
     .action-primary {
       @include float(left);
@@ -195,13 +185,17 @@
         box-shadow: none;
       }
 
+      textarea {
+        height: 125px;
+      }
+
       .checkbox {
         height: auto;
         position: absolute;
         top: 5px;
 
         & + label {
-          @include margin-left(24px);
+          @include margin-left(30px);
 
           display: inline-block;
         }
@@ -210,10 +204,17 @@
   }
 
   .cta-wrapper {
+    border-top: 4px solid $gray-l5;
     padding: 20px 0;
   }
 
   @include media($bp-medium) {
+    .user-info {
+      .info-column {
+        width: 50%;
+      }
+    }
+
     .financial-assistance-form {
       .action-primary {
         @include float(right);
@@ -226,6 +227,12 @@
   }
 
   @include media($bp-large) {
+    .user-info {
+      .info-column {
+        width: 25%;
+      }
+    }
+
     .financial-assistance-form {
       .action-primary {
         @include float(right);
@@ -238,6 +245,12 @@
   }
 
   @include media($bp-huge) {
+    .user-info {
+      .info-column {
+        width: 25%;
+      }
+    }
+
     .financial-assistance-form {
       .action-primary {
         @include float(right);

@@ -37,7 +37,6 @@ function(HtmlUtils, BaseView, _, $, gettext, NotificationView, AlertView) {
         handleValidationError: function(model, error) {
             this.clearValidationErrors();
             // error is object w/ fields and error strings
-            // eslint-disable-next-line guard-for-in
             for (var field in error) {
                 var ele = this.$el.find('#' + this.fieldToSelectorMap[field]);
                 this._cacheValidationErrors.push(ele);
@@ -135,8 +134,7 @@ function(HtmlUtils, BaseView, _, $, gettext, NotificationView, AlertView) {
                             self.notificationBarShowing = false;
                         }
                     }]
-                }
-            });
+                }});
             this.notificationBarShowing = true;
             this.confirmation.show();
             // Make sure the bar is in the right state

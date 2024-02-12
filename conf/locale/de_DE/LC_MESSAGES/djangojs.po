@@ -42,7 +42,7 @@
 # Stefania Trabucchi <stefania.trabucchi@abstract-technology.de>, 2018-2023
 # Waheed Ahmed <waheed@edx.org>, 2019
 # #-#-#-#-#  djangojs-studio.po (edx-platform)  #-#-#-#-#
-# edX community translations have been downloaded from German (Germany) (http://app.transifex.com/open-edx/edx-platform/language/de_DE/).
+# edX community translations have been downloaded from German (Germany) (http://www.transifex.com/open-edx/edx-platform/language/de_DE/).
 # Copyright (C) 2023 EdX
 # This file is distributed under the GNU AFFERO GENERAL PUBLIC LICENSE.
 #
@@ -70,7 +70,7 @@
 # Shan <shanmathuran.sritharan@paluno.uni-due.de>, 2013
 # Stefania Trabucchi <stefania.trabucchi@abstract-technology.de>, 2018-2021,2023
 # #-#-#-#-#  djangojs-account-settings-view.po (0.1a)  #-#-#-#-#
-# edX community translations have been downloaded from German (Germany) (https://app.transifex.com/open-edx/teams/6205/de_DE/).
+# edX community translations have been downloaded from German (Germany) (https://www.transifex.com/open-edx/teams/6205/de_DE/).
 # Copyright (C) 2023 EdX
 # This file is distributed under the GNU AFFERO GENERAL PUBLIC LICENSE.
 # EdX Team <info@edx.org>, 2023.
@@ -134,7 +134,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: edx-platform\n"
 "Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
-"POT-Creation-Date: 2023-12-17 20:43+0000\n"
+"POT-Creation-Date: 2023-04-02 20:42+0000\n"
 "PO-Revision-Date: 2014-06-11 15:18+0000\n"
 "Last-Translator: Alfredo Guillem, 2022\n"
 "Language-Team: German (Germany) (http://app.transifex.com/open-edx/edx-platform/language/de_DE/)\n"
@@ -144,6 +144,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: Babel 2.8.0\n"
+
+#: cms/static/cms/js/main.js cms/static/js/views/active_video_upload_list.js
+#: cms/static/js/views/video_transcripts.js
+#: xmodule/assets/library_source_block/public/js/library_source_block.js
+msgid ""
+"This may be happening because of an error with our server or your internet "
+"connection. Try refreshing the page or making sure you are online."
+msgstr ""
+"Dieses Problem wurde durch einen Fehler auf unserem Server oder mit Ihrer "
+"Internetverbindung verursacht. Versuchen Sie die Seite neu zu laden und/oder"
+" prüfen Sie ihre Internetverbindung"
 
 #: cms/static/cms/js/xblock/cms.runtime.v1.js
 #: cms/static/js/certificates/views/signatory_details.js
@@ -156,6 +167,7 @@ msgstr ""
 #: cms/static/js/views/modals/edit_xblock.js cms/static/js/views/tabs.js
 #: cms/static/js/views/utils/xblock_utils.js lms/static/js/ccx/schedule.js
 #: lms/static/js/views/fields.js
+#: xmodule/assets/library_source_block/public/js/library_source_block.js
 msgid "Saving"
 msgstr "Speichert"
 
@@ -195,7 +207,6 @@ msgstr "Löschen"
 #: cms/static/js/views/validation.js
 #: common/static/common/js/components/utils/view_utils.js
 #: lms/static/js/Markdown.Editor.js
-#: lms/static/js/learner_dashboard/EnterpriseLearnerPortalModal.jsx
 #: lms/static/js/student_account/components/StudentAccountDeletionModal.jsx
 #: xmodule/js/src/html/edit.js
 #: cms/templates/js/add-xblock-component-menu-problem.underscore
@@ -234,6 +245,7 @@ msgstr "Hochladen"
 #: cms/templates/js/course-video-settings.underscore
 #: common/static/common/templates/discussion/templates.underscore
 #: common/static/common/templates/image-modal.underscore
+#: openedx/features/learner_profile/static/learner_profile/templates/share_modal.underscore
 msgid "Close"
 msgstr "Schließen"
 
@@ -257,11 +269,8 @@ msgstr "Datei auswählen"
 #. #-#-#-#-#  djangojs-partial.po (edx-platform)  #-#-#-#-#
 #. Translators: this is a message from the raw HTML editor displayed in the
 #. browser when a user needs to edit HTML
-#: cms/static/js/views/course_info_update.js
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js cms/static/js/views/tabs.js
-#: cms/static/js/views/utils/xblock_utils.js lms/static/js/Markdown.Editor.js
-#: xmodule/js/src/html/edit.js
+#: cms/static/js/views/course_info_update.js cms/static/js/views/tabs.js
+#: lms/static/js/Markdown.Editor.js xmodule/js/src/html/edit.js
 #: common/static/common/templates/discussion/templates.underscore
 #: lms/templates/learner_dashboard/verification_popover.underscore
 msgid "OK"
@@ -901,7 +910,6 @@ msgid "Select a category"
 msgstr "Wählen Sie eine Kategorie"
 
 #: lms/djangoapps/support/static/support/jsx/logged_in_user.jsx
-#: lms/templates/financial-assistance/financial_assessment_form.underscore
 #: lms/templates/student_account/account_settings.underscore
 msgid "Account Settings"
 msgstr "Benutzerkonto-Einstellungen"
@@ -1953,28 +1961,28 @@ msgstr ""
 "der Nationalgarde gedient?"
 
 #: lms/static/js/demographics_collection/DemographicsCollectionModal.jsx
-msgid "Select military status"
-msgstr ""
+msgid "What is the highest level of education that you have achieved so far?"
+msgstr "Was ist der höchste Bildungsabschluss, den Sie erreicht haben?"
 
 #: lms/static/js/demographics_collection/DemographicsCollectionModal.jsx
-msgid "Select level of education"
+msgid ""
+"What is the highest level of education that any of your parents or guardians"
+" have achieved?"
 msgstr ""
+"Welches ist der höchste Bildungsabschluss, den ein Elternteil oder "
+"Erziehungsberechtigter von Ihnen erreicht hat?"
 
 #: lms/static/js/demographics_collection/DemographicsCollectionModal.jsx
-msgid "Select guardian education"
-msgstr ""
+msgid "Select employment status"
+msgstr "Wählen Sie Ihren Beschäftigungsstatus"
 
 #: lms/static/js/demographics_collection/DemographicsCollectionModal.jsx
-msgid "Select current industry"
-msgstr ""
+msgid "What industry do you currently work in?"
+msgstr "In welcher Branche arbeiten Sie derzeit?"
 
 #: lms/static/js/demographics_collection/DemographicsCollectionModal.jsx
-msgid "Select prospective industry"
-msgstr ""
-
-#: lms/static/js/demographics_collection/DemographicsCollectionModal.jsx
-msgid "Thank you! You’re helping make edX better for everyone."
-msgstr ""
+msgid "What industry do you want to work in?"
+msgstr "In welcher Branchen wollen Sie arbeiten?"
 
 #: lms/static/js/demographics_collection/MultiselectDropdown.jsx
 msgid "Clear all"
@@ -2625,9 +2633,11 @@ msgstr "Folgende Nutzer wurden erfolgreich eingeschrieben:"
 #. Translators: A list of users appears after this sentence;
 #: lms/static/js/instructor_dashboard/membership.js
 msgid ""
-"Email cannot be sent to the following users via batch enrollment. They will "
-"be allowed to enroll once they register:"
+"Successfully sent enrollment emails to the following users. They will be "
+"allowed to enroll once they register:"
 msgstr ""
+"An folgende Nutzer wurden erfolgreich E-Mails zur Einschreibung versandt. "
+"Sobald diese sich registriert haben, können sie sich einschreiben: "
 
 #. Translators: A list of users appears after this sentence;
 #: lms/static/js/instructor_dashboard/membership.js
@@ -2639,9 +2649,12 @@ msgstr ""
 #. Translators: A list of users appears after this sentence;
 #: lms/static/js/instructor_dashboard/membership.js
 msgid ""
-"Email cannot be sent to the following users via batch enrollment. They will "
-"be enrolled once they register:"
+"Successfully sent enrollment emails to the following users. They will be "
+"enrolled once they register:"
 msgstr ""
+"An folgende Teilnehmer wurde erfolgreich eine E-Mail bezügliche der "
+"Einschreibung versandt. Diese werden eingeschrieben, sobald sie sich "
+"registriert haben: "
 
 #. Translators: A list of users appears after this sentence;
 #: lms/static/js/instructor_dashboard/membership.js
@@ -3124,10 +3137,6 @@ msgstr ""
 " sensiblen Natur der Teilnehmerinformationen."
 
 #: lms/static/js/learner_dashboard/EnterpriseLearnerPortalModal.jsx
-msgid "You have access to the {enterpriseName} dashboard"
-msgstr ""
-
-#: lms/static/js/learner_dashboard/EnterpriseLearnerPortalModal.jsx
 msgid ""
 "To access the courses available to you through {enterpriseName}, visit the "
 "{enterpriseName} dashboard."
@@ -3138,6 +3147,26 @@ msgstr ""
 #: lms/static/js/learner_dashboard/EnterpriseLearnerPortalModal.jsx
 msgid "Go to dashboard"
 msgstr "Gehe zur 'Meine Kurse' Übersicht"
+
+#: lms/static/js/learner_dashboard/RecommendationsPanel.jsx
+msgid "Recommendations for you"
+msgstr "Empfehlungen für Sie"
+
+#: lms/static/js/learner_dashboard/RecommendationsPanel.jsx
+msgid "loading"
+msgstr "Wird geladen"
+
+#: lms/static/js/learner_dashboard/RecommendationsPanel.jsx
+msgid ""
+"Browse recently launched courses and see what's new in your favorite "
+"subjects."
+msgstr ""
+"Stöbern Sie in den kürzlich hinzugefügten Kursen und erfahren Sie, was es in"
+" Ihren Lieblingsthemen Neues gibt."
+
+#: lms/static/js/learner_dashboard/RecommendationsPanel.jsx
+msgid "Explore courses"
+msgstr "Kursübersicht"
 
 #: lms/static/js/learner_dashboard/Static2UCallouts.jsx
 msgid "More opportunities for you"
@@ -3182,10 +3211,6 @@ msgstr "Gestartet am {start}"
 #: lms/static/js/learner_dashboard/models/course_card_model.js
 msgid "Ends {end}"
 msgstr "Endet am {end}"
-
-#: lms/static/js/learner_dashboard/models/program_subscription_model.js
-msgid "${price}/month {currency}"
-msgstr ""
 
 #: lms/static/js/learner_dashboard/views/course_entitlement_view.js
 msgid "You must select a session to access the course."
@@ -3244,56 +3269,6 @@ msgstr ""
 "Sind Sie sicher, dass Sie sich aus dem vin Ihnen gekauften Kurs {courseName}"
 " ({courseNumber}) ausschreiben wollen? Sie werden keine Rückerstattung für "
 "Ihre Zahlung erhalten."
-
-#: lms/static/js/learner_dashboard/views/program_alert_list_view.js
-msgid "View program"
-msgstr ""
-
-#: lms/static/js/learner_dashboard/views/program_alert_list_view.js
-msgid "Enroll in a {programName}'s course"
-msgstr ""
-
-#: lms/static/js/learner_dashboard/views/program_alert_list_view.js
-msgid ""
-"You have an active subscription to the {programName} program but are not "
-"enrolled in any courses. Enroll in a remaining course and enjoy verified "
-"access."
-msgstr ""
-
-#: lms/static/js/learner_dashboard/views/program_alert_list_view.js
-msgid ""
-"According to our records, you are not enrolled in any courses included in "
-"your {programName} program subscription. Enroll in a course from the "
-"{i_start}Program Details{i_end} page."
-msgstr ""
-
-#: lms/static/js/learner_dashboard/views/program_alert_list_view.js
-msgid "Subscription trial expires in less than 24 hours"
-msgstr ""
-
-#: lms/static/js/learner_dashboard/views/program_alert_list_view.js
-msgid "Subscription trial expires in {remainingDays} day"
-msgid_plural "Subscription trial expires in {remainingDays} days"
-msgstr[0] ""
-msgstr[1] ""
-
-#: lms/static/js/learner_dashboard/views/program_alert_list_view.js
-msgid ""
-"Your {programName} trial will expire at {trialEndTime} on {trialEndDate} and"
-" the card on file will be charged {subscriptionPrice}."
-msgstr ""
-
-#: lms/static/js/learner_dashboard/views/program_alert_list_view.js
-msgid ""
-"Your {programName} trial will expire in {remainingDays} day at "
-"{trialEndTime} on {trialEndDate} and the card on file will be charged "
-"{subscriptionPrice}."
-msgid_plural ""
-"Your {programName} trial will expire in {remainingDays} days at "
-"{trialEndTime} on {trialEndDate} and the card on file will be charged "
-"{subscriptionPrice}."
-msgstr[0] ""
-msgstr[1] ""
 
 #: lms/static/js/learner_dashboard/views/program_details_sidebar_view.js
 msgid "{type} Progress"
@@ -4215,6 +4190,10 @@ msgstr ""
 "interessiert Sie, warum nehmen Sie an den Kursen teil und was möchten Sie "
 "gerne lernen. "
 
+#: openedx/features/learner_profile/static/learner_profile/js/views/badge_list_container.js
+msgid "Accomplishments Pagination"
+msgstr "Seitennummerierung der Leistungen"
+
 #: openedx/features/learner_profile/static/learner_profile/js/views/learner_profile_fields.js
 msgid "Account Settings page."
 msgstr "Kontoeinstellungsseite"
@@ -4250,6 +4229,10 @@ msgid "About Me"
 msgstr "Über mich"
 
 #: openedx/features/learner_profile/static/learner_profile/js/views/learner_profile_view.js
+msgid "Accomplishments"
+msgstr "Leistungen"
+
+#: openedx/features/learner_profile/static/learner_profile/js/views/learner_profile_view.js
 msgid "Profile"
 msgstr "Profil"
 
@@ -4257,6 +4240,18 @@ msgstr "Profil"
 #: xmodule/js/public/js/library_content_edit.js
 msgid "Updating with latest library content"
 msgstr "Aktualisiere mit den neuesten Bibliotheken"
+
+#: xmodule/assets/library_source_block/LibrarySourcedBlockPicker.jsx
+msgid "Loading..."
+msgstr "Lade..."
+
+#: xmodule/assets/library_source_block/LibrarySourcedBlockPicker.jsx
+msgid "Selected blocks"
+msgstr "Ausgewählte Blöcke"
+
+#: xmodule/assets/library_source_block/public/js/library_source_block.js
+msgid "Unable to update settings"
+msgstr "Einstellungen aktualisieren nicht möglich"
 
 #: xmodule/assets/split_test/public/js/split_test_author_view.js
 #: xmodule/js/public/js/split_test_author_view.js
@@ -5927,13 +5922,6 @@ msgstr "Transkripte aktivieren"
 msgid "Turn off transcripts"
 msgstr "Transkripte deaktivieren"
 
-#: cms/static/cms/js/main.js cms/static/js/views/active_video_upload_list.js
-#: cms/static/js/views/video_transcripts.js
-msgid ""
-"This may be happening because of an error with our server or your internet "
-"connection. Try refreshing the page or making sure you are online."
-msgstr ""
-
 #: cms/static/cms/js/main.js
 msgid "Studio's having trouble saving your work"
 msgstr "Studio hat Probleme beim Speichern Ihrer Arbeit"
@@ -6478,72 +6466,6 @@ msgstr "{startTag}{requestToken}{endTag}{selector}"
 #: cms/static/js/views/course_info_update.js
 msgid "Are you sure you want to delete this update?"
 msgstr "Wollen Sie wirklich die Aktualisierungen löschen?"
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/pages/container_subviews.js
-msgid "Copying"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-msgid "Copy of '{componentDisplayName}'"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid "Pasting"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid "Some errors occurred"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid "The following required files could not be added to the course:"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid "You may need to update a file(s) manually"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid ""
-"The following files already exist in this course but don't match the version"
-" used by the component you pasted:"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid "New file(s) added to Files & Uploads."
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid "The following required files were imported to this course:"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid "View files"
-msgstr ""
-
-#: cms/static/js/views/course_outline.js
-#: cms/static/js/views/pages/container.js
-#: cms/static/js/views/utils/xblock_utils.js
-msgid "Dismiss"
-msgstr ""
 
 #: cms/static/js/views/course_rerun.js
 msgid "Create Re-run"
@@ -7598,7 +7520,6 @@ msgstr "Helfen Sie zu übersetzen in {beta_language}"
 
 #: cms/templates/js/asset-library.underscore
 #: cms/templates/js/basic-modal.underscore
-#: cms/templates/js/course-outline.underscore
 #: lms/templates/instructor/instructor_dashboard_2/enrollment-code-lookup-links.underscore
 msgid "Actions"
 msgstr "Aktionen"
@@ -8491,14 +8412,16 @@ msgid "Financial Assistance Application"
 msgstr "Antrag auf finanzielle Unterstützung"
 
 #: lms/templates/financial-assistance/financial_assessment_form.underscore
-msgid "Profile Information"
-msgstr ""
+msgid "About You"
+msgstr "Über Sie"
 
 #: lms/templates/financial-assistance/financial_assessment_form.underscore
 msgid ""
-"The following information is already a part of your {platform} profile and "
-"is required for your application. To edit this information go to "
+"The following information is already a part of your {platform} profile. "
+"We've included it here for your application."
 msgstr ""
+"Die folgende Information ist Teil Ihres {platform} Profils. Wir haben es "
+"hier für Sie eingefügt."
 
 #: lms/templates/financial-assistance/financial_assessment_form.underscore
 msgid "Email address"
@@ -8513,8 +8436,8 @@ msgid "Country of residence"
 msgstr "Wohnsitz"
 
 #: lms/templates/financial-assistance/financial_assessment_form.underscore
-msgid "Application Details"
-msgstr ""
+msgid "Back to {platform} FAQs"
+msgstr "Zurück zu den {platform} FAQs"
 
 #: lms/templates/financial-assistance/financial_assessment_form.underscore
 msgid "Submit Application"
@@ -8885,7 +8808,6 @@ msgstr "Gültig"
 
 #: lms/templates/learner_dashboard/certificate_status.underscore
 #: lms/templates/learner_dashboard/upgrade_message.underscore
-#: lms/templates/learner_dashboard/upgrade_message_subscription.underscore
 msgid "Certificate Status:"
 msgstr "Zertifikat Status:"
 
@@ -8988,8 +8910,8 @@ msgid ""
 msgstr "Neue Kurse durchsuchen"
 
 #: lms/templates/learner_dashboard/explore_new_programs.underscore
-msgid "Explore new programs"
-msgstr ""
+msgid "Explore New Programs"
+msgstr "Nach neuen Programmen suchen"
 
 #: lms/templates/learner_dashboard/program_card.underscore
 #: lms/templates/verify_student/enrollment_confirmation_step.underscore
@@ -9011,11 +8933,6 @@ msgstr "Verblieben"
 msgid "%(programName)s Home Page."
 msgstr "%(programName)s Home Page."
 
-#: lms/templates/learner_dashboard/program_card.underscore
-#: lms/templates/learner_dashboard/program_header_view.underscore
-msgid "Subscribed"
-msgstr ""
-
 #: lms/templates/learner_dashboard/program_details_sidebar.underscore
 msgid "Your {program} Certificate"
 msgstr "Ihr {program} Zertifikat"
@@ -9026,43 +8943,6 @@ msgid "Open the certificate you earned for the %(title)s program."
 msgstr ""
 "Öffnen Sie das Zertifikat, welches Sie für den Kurs %(title)s erhalten "
 "haben."
-
-#: lms/templates/learner_dashboard/program_details_sidebar.underscore
-msgid "Trial subscription"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_sidebar.underscore
-msgid "Active subscription"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_sidebar.underscore
-msgid "Inactive subscription"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_sidebar.underscore
-msgid ""
-"View your receipts or modify your subscription on the {a_start}Orders and "
-"subscriptions{a_end} page"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_sidebar.underscore
-msgid ""
-"Restart your subscription for {subscriptionPrice}. Your payment history is "
-"still available on the {a_start}Orders and subscriptions{a_end} page"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_sidebar.underscore
-msgid ""
-"If you had a subscription previously, your payment history is still "
-"available on the {a_start}Orders and subscriptions{a_end} page"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_sidebar.underscore
-msgid ""
-"Need help? Check out the {a_start}Learner Help "
-"Center{span_start}{icon}{span_end}{a_end} to troubleshoot issues or contact "
-"support"
-msgstr ""
 
 #: lms/templates/learner_dashboard/program_details_sidebar.underscore
 msgid "Program Record"
@@ -9107,59 +8987,8 @@ msgstr "Glückwunsch!"
 
 #: lms/templates/learner_dashboard/program_details_tab_view.underscore
 #: lms/templates/learner_dashboard/program_details_view.underscore
-#, python-format
-msgid ""
-"You have successfully completed all the requirements for the %(title)s "
-"%(type)s."
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#: lms/templates/learner_dashboard/program_details_view.underscore
 msgid "Your Program Journey"
 msgstr "Ihr Programmverlauf"
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#, python-format
-msgid ""
-"Track and plan your progress through the %(count)s course(s) in this "
-"program. To complete the program, you must earn a verified certificate for "
-"each course."
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#: lms/templates/learner_dashboard/program_details_view.underscore
-msgid "Manage my subscription"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#: lms/templates/learner_dashboard/program_details_view.underscore
-msgid "Restart my subscription"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#: lms/templates/learner_dashboard/program_details_view.underscore
-msgid "Start {trialLength}-day free trial"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#: lms/templates/learner_dashboard/program_details_view.underscore
-msgid "Trial ends {trialEndDate} at {trialEndTime}"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#: lms/templates/learner_dashboard/program_details_view.underscore
-msgid "Your next billing date is {currentPeriodEnd}"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#: lms/templates/learner_dashboard/program_details_view.underscore
-msgid "{subscriptionPrice} subscription. Cancel anytime."
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#: lms/templates/learner_dashboard/program_details_view.underscore
-msgid "{subscriptionPrice} subscription after trial ends. Cancel anytime."
-msgstr ""
 
 #: lms/templates/learner_dashboard/program_details_tab_view.underscore
 #: lms/templates/learner_dashboard/program_details_view.underscore
@@ -9204,75 +9033,17 @@ msgstr ""
 "Absolvieren Sie Kurse nach Ihrem Zeitplan, um sicherzustellen, dass Sie in "
 "Ihrem Bereich herausstechen!"
 
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#, python-format
-msgid "Transform your %(org)s %(type)s into a full master’s degree"
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_tab_view.underscore
-#, python-format
-msgid ""
-"Successful completion of %(org)s %(program)s credential can be applied "
-"towards flexible, rigorous, and affordable masters degrees from the world’s "
-"leading universities."
-msgstr ""
-
-#: lms/templates/learner_dashboard/program_details_view.underscore
-#, python-format
-msgid ""
-"Track and plan your progress through the %(count)s courses in this program. "
-"To complete the program, you must earn a verified certificate for each "
-"course."
-msgstr ""
-
 #: lms/templates/learner_dashboard/program_header_view.underscore
 msgid "{organization}\\'s logo"
 msgstr "{organization}\\'s Logo"
 
-#: lms/templates/learner_dashboard/program_list_header_view.underscore
-msgid "My programs"
-msgstr ""
-
-#: lms/templates/learner_dashboard/subscription_upsell_view.underscore
-msgid "New"
-msgstr ""
-
-#: lms/templates/learner_dashboard/subscription_upsell_view.underscore
-msgid "Monthly program subscriptions {emDash} more flexible, more affordable"
-msgstr ""
-
-#: lms/templates/learner_dashboard/subscription_upsell_view.underscore
-msgid ""
-"Now available for many popular programs, affordable monthly subscription "
-"pricing can help you manage your budget more effectively. Subscriptions "
-"start at {minSubscriptionPrice}/month USD per program, after a 7-day full "
-"access free trial. Cancel at any time."
-msgstr ""
-
-#: lms/templates/learner_dashboard/subscription_upsell_view.underscore
-msgid "Explore subscription options"
-msgstr ""
-
 #: lms/templates/learner_dashboard/upgrade_message.underscore
-#: lms/templates/learner_dashboard/upgrade_message_subscription.underscore
 msgid "Needs verified certificate "
 msgstr "Benötigt ein verifiziertes Zertifikat"
 
 #: lms/templates/learner_dashboard/upgrade_message.underscore
 msgid "Upgrade to Verified"
 msgstr "Upgrade auf Verifiziert"
-
-#: lms/templates/learner_dashboard/upgrade_message_subscription.underscore
-msgid "Upgrade with a subscription"
-msgstr ""
-
-#: lms/templates/learner_dashboard/upgrade_message_subscription.underscore
-msgid "Pay {subscriptionPrice} for all courses in this program"
-msgstr ""
-
-#: lms/templates/learner_dashboard/upgrade_message_subscription.underscore
-msgid "Pay {subscriptionPrice} after {trialLength}-day free trial"
-msgstr ""
 
 #: lms/templates/student_account/account.underscore
 msgid "New Address"
@@ -10157,6 +9928,32 @@ msgstr[1] "Die nächsten {num_items} Ergebnisse laden"
 msgid "Sorry, no results were found."
 msgstr "Es wurden leider keine Ergebnisse gefunden."
 
+#: openedx/features/learner_profile/static/learner_profile/templates/badge.underscore
+#, python-format
+msgid "Share your \"%(display_name)s\" award"
+msgstr "Teilen Sie Ihre \"%(display_name)s\" Auszeichnung"
+
+#: openedx/features/learner_profile/static/learner_profile/templates/badge.underscore
+msgid "Share"
+msgstr "Teilen"
+
+#: openedx/features/learner_profile/static/learner_profile/templates/badge.underscore
+#, python-format
+msgid "Earned %(created)s."
+msgstr "Hat %(created)s verdient."
+
+#: openedx/features/learner_profile/static/learner_profile/templates/badge_placeholder.underscore
+msgid "What's Your Next Accomplishment?"
+msgstr "Was ist Ihr nächster Erfolg?"
+
+#: openedx/features/learner_profile/static/learner_profile/templates/badge_placeholder.underscore
+msgid "Start working toward your next learning goal."
+msgstr "Beginnen Sie mit der Arbeit an Ihrem nächsten Lernziel."
+
+#: openedx/features/learner_profile/static/learner_profile/templates/badge_placeholder.underscore
+msgid "Find a course"
+msgstr "Finde einen Kurs"
+
 #: openedx/features/learner_profile/static/learner_profile/templates/section_two.underscore
 msgid "You are currently sharing a limited profile."
 msgstr "Sie teilen aktuell ein limitiertes Profil."
@@ -10164,6 +9961,38 @@ msgstr "Sie teilen aktuell ein limitiertes Profil."
 #: openedx/features/learner_profile/static/learner_profile/templates/section_two.underscore
 msgid "This learner is currently sharing a limited profile."
 msgstr "Dieser Teilnehmer teilt momentan ein eingeschränktes Profil."
+
+#: openedx/features/learner_profile/static/learner_profile/templates/share_modal.underscore
+msgid "Share on Mozilla Backpack"
+msgstr "Auf Mozilla Backpack teilen"
+
+#: openedx/features/learner_profile/static/learner_profile/templates/share_modal.underscore
+msgid ""
+"To share your certificate on Mozilla Backpack, you must first have a "
+"Backpack account. Complete the following steps to add your certificate to "
+"Backpack."
+msgstr ""
+"Um Ihr Zertifikat auf Mozilla Backpack zu teilen, müssen Sie zuerst ein "
+"Backpack-Konto haben. Führen Sie die folgenden Schritte aus, um Ihr "
+"Zertifikat zum Backpack hinzuzufügen."
+
+#: openedx/features/learner_profile/static/learner_profile/templates/share_modal.underscore
+msgid ""
+"Create a {link_start}Mozilla Backpack{link_end} account, or log in to your "
+"existing account"
+msgstr ""
+"Erstellen Sie ein {link_start}Mozilla Backpack{link_end} Konto, oder melden "
+"Sie sich bei Ihrem bestehenden Konto an."
+
+#: openedx/features/learner_profile/static/learner_profile/templates/share_modal.underscore
+msgid ""
+"{download_link_start}Download this image (right-click or option-click, save "
+"as){link_end} and then {upload_link_start}upload{link_end} it to your "
+"backpack."
+msgstr ""
+"{download_link_start}Laden Sie dieses Bild herunter (Rechtsklick oder "
+"Optionsklick, Speichern unter){link_end} und dann {upload_link_start}laden "
+"Sie es hoch{link_end} in Ihren Backpack."
 
 #: cms/templates/js/access-editor.underscore
 msgid "Limit Access"
@@ -10690,16 +10519,8 @@ msgid "Proctoring Settings"
 msgstr "Einstellung der Beaufsichtigung"
 
 #: cms/templates/js/course-outline.underscore
-msgid "Manage Tags"
-msgstr ""
-
-#: cms/templates/js/course-outline.underscore
 msgid "Configure"
 msgstr "Konfigurieren"
-
-#: cms/templates/js/course-outline.underscore
-msgid "Copy to Clipboard"
-msgstr ""
 
 #: cms/templates/js/course-outline.underscore
 msgid "Duplicate"
@@ -10746,13 +10567,6 @@ msgid "Subsection is hidden after due date"
 msgstr "Unterabschnitt wird nach dem Fälligkeitsdatum nicht mehr angezeigt."
 
 #: cms/templates/js/course-outline.underscore
-#, python-format
-msgid ""
-"This subsection is configured as \\\"%(gradingType)s\\\", which doesn't "
-"exist in the current grading policy."
-msgstr ""
-
-#: cms/templates/js/course-outline.underscore
 #: cms/templates/js/xblock-outline.underscore
 msgid "You haven't added any content to this course yet."
 msgstr "Du hast bisher keine Inhalte zu diesem Kurs hinzugefügt"
@@ -10762,19 +10576,6 @@ msgstr "Du hast bisher keine Inhalte zu diesem Kurs hinzugefügt"
 #, python-format
 msgid "Click to add a new %(xblock_type)s"
 msgstr "Klicken Sie, um einen neuen %(xblock_type)s hinzuzufügen"
-
-#: cms/templates/js/course-outline.underscore
-#, python-format
-msgid "Paste %(xblock_type)s"
-msgstr ""
-
-#: cms/templates/js/course-outline.underscore
-msgid "From:"
-msgstr ""
-
-#: cms/templates/js/course-outline.underscore
-msgid "What's in my clipboard?"
-msgstr ""
 
 #: cms/templates/js/course-settings-learning-fields.underscore
 msgid "Learning Outcome"
@@ -10818,14 +10619,6 @@ msgstr "Klicken Sie auf 'Schließen', um die Videoeinstellungen zu verbergen."
 #: cms/templates/js/course-video-settings.underscore
 msgid "Course Video Settings"
 msgstr "Videoeinstellungen"
-
-#: cms/templates/js/course-video-sharing-enable.underscore
-msgid "Video Sharing"
-msgstr ""
-
-#: cms/templates/js/course-video-sharing-enable.underscore
-msgid "Learn more"
-msgstr ""
 
 #: cms/templates/js/course-video-transcript-preferences.underscore
 msgid "Transcript Turnaround"
@@ -10929,30 +10722,6 @@ msgid ""
 msgstr ""
 "Anzahl der Aufgaben dieses typs, welche wegfallen. Die mit der niedrigsten "
 "Punktezahl werden zuerst gelöscht."
-
-#: cms/templates/js/course_grade_policy.underscore
-msgid "Warning: "
-msgstr ""
-
-#: cms/templates/js/course_grade_policy.underscore
-msgid ""
-"The number of {type} assignments defined here does not match the current "
-"number of {type} assignments in the course:"
-msgstr ""
-
-#: cms/templates/js/course_grade_policy.underscore
-msgid "There are no assignments of this type in the course."
-msgstr ""
-
-#: cms/templates/js/course_grade_policy.underscore
-msgid "{assignment_count} {type} assignment(s) found:"
-msgstr ""
-
-#: cms/templates/js/course_grade_policy.underscore
-msgid ""
-"The number of {type} assignments in the course matches the number defined "
-"here."
-msgstr ""
 
 #: cms/templates/js/course_info_handouts.underscore
 msgid "Course Handouts"
@@ -11406,10 +11175,6 @@ msgstr ""
 "Hinweis: Blenden Sie benotete Aufgaben nicht aus, nachdem sie freigegeben "
 "wurden."
 
-#: cms/templates/js/publish-xblock.underscore
-msgid "Copy Unit"
-msgstr ""
-
 #: cms/templates/js/release-date-editor.underscore
 msgid "Release Date and Time"
 msgstr "Freigabedatum und Uhrzeit"
@@ -11438,6 +11203,12 @@ msgstr ""
 msgid ""
 "If a learner starts on {startDate}, this subsection will be due on "
 "{projectedDueIn}."
+msgstr ""
+
+#: cms/templates/js/self-paced-due-date-editor.underscore
+msgid ""
+"The maximum number of weeks this subsection can be due in is 18 weeks from "
+"the learner enrollment date."
 msgstr ""
 
 #: cms/templates/js/self-paced-due-date-editor.underscore
@@ -11599,18 +11370,6 @@ msgstr ""
 "die Einheit veröffentlicht haben. Nur Lerneinheiten, die explizit vor den "
 "Lernenden verborgen sind, bleiben verborgen, nachdem Sie diese Option für "
 "%(xblockType)s deaktiviert haben  ."
-
-#: cms/templates/js/summary-configuration-editor.underscore
-msgid "Xpert unit summaries"
-msgstr ""
-
-#: cms/templates/js/summary-configuration-editor.underscore
-msgid "Enable summaries"
-msgstr ""
-
-#: cms/templates/js/tag-list.underscore
-msgid "Manage tags"
-msgstr ""
 
 #: cms/templates/js/team-member.underscore
 msgid "Current Role:"

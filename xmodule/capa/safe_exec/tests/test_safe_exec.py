@@ -9,18 +9,17 @@ import unittest
 
 import pytest
 import random2 as random
+import six
 from codejail import jail_code
 from codejail.django_integration import ConfigureCodeJailMiddleware
 from codejail.safe_exec import SafeExecException
 from django.conf import settings
 from django.core.exceptions import MiddlewareNotUsed
 from django.test import override_settings
-from six import unichr
+from six import text_type, unichr
 from six.moves import range
 
-from openedx.core.djangolib.testing.utils import skip_unless_lms
 from xmodule.capa.safe_exec import safe_exec, update_hash
-from xmodule.capa.safe_exec.remote_exec import is_codejail_rest_service_enabled
 
 
 class TestSafeExec(unittest.TestCase):  # lint-amnesty, pylint: disable=missing-class-docstring
@@ -78,41 +77,24 @@ class TestSafeExec(unittest.TestCase):  # lint-amnesty, pylint: disable=missing-
         g = {}
         with pytest.raises(SafeExecException) as cm:
             safe_exec("1/0", g)
-        assert 'ZeroDivisionError' in str(cm.value)
+        assert 'ZeroDivisionError' in text_type(cm.value)
 
 
 class TestSafeOrNot(unittest.TestCase):  # lint-amnesty, pylint: disable=missing-class-docstring
-
-    @skip_unless_lms
     def test_cant_do_something_forbidden(self):
         '''
         Demonstrates that running unsafe code inside the code jail
         throws SafeExecException, protecting the calling process.
-
-        This test generally is skipped in CI due to its complex setup. That said, we recommend that devs who are
-        hacking on CodeJail or advanced CAPA in any significant way take the time to make sure it passes locally.
-        See either:
-        * in-platform setup: https://github.com/openedx/edx-platform/blob/master/xmodule/capa/safe_exec/README.rst
-        * remote setup (using Tutor): https://github.com/eduNEXT/tutor-contrib-codejail
-
-        Note on @skip_unless_lms:
-        This test can also be run in a CMS context, but that's giving us trouble in CI right now (the skip logic isn't
-        working). So, if you're running this locally, feel free to remove @skip_unless_lms and run it against CMS too.
         '''
-        # If in-platform codejail isn't configured...
+        # Can't test for forbiddenness if CodeJail isn't configured for python.
         if not jail_code.is_configured("python"):
-
-            # ...AND if remote codejail isn't configured...
-            if not is_codejail_rest_service_enabled():
-
-                # ...then skip this test.
-                pytest.skip(reason="Local or remote codejail has to be configured and enabled to run this test.")
+            pytest.skip()
 
         g = {}
         with pytest.raises(SafeExecException) as cm:
             safe_exec('import sys; sys.exit(1)', g)
-        assert "SystemExit" not in str(cm)
-        assert "Couldn't execute jailed code" in str(cm)
+        assert "SystemExit" not in text_type(cm)
+        assert "Couldn't execute jailed code" in text_type(cm)
 
     def test_can_do_something_forbidden_if_run_unsafely(self):
         '''
@@ -122,7 +104,7 @@ class TestSafeOrNot(unittest.TestCase):  # lint-amnesty, pylint: disable=missing
         g = {}
         with pytest.raises(SystemExit) as cm:
             safe_exec('import sys; sys.exit(1)', g, unsafely=True)
-        assert "SystemExit" in str(cm)
+        assert "SystemExit" in text_type(cm)
 
 
 class TestLimitConfiguration(unittest.TestCase):
@@ -171,7 +153,7 @@ class TestLimitConfiguration(unittest.TestCase):
             # middleware is automatically initialized because it's an element of
             # `settings.MIDDLEWARE`).
             try:
-                ConfigureCodeJailMiddleware(get_response=lambda request: None)
+                ConfigureCodeJailMiddleware()
             except MiddlewareNotUsed:
                 pass
 
@@ -280,7 +262,7 @@ class TestSafeExecCaching(unittest.TestCase):
         # Check that using non-ASCII unicode does not raise an encoding error.
         # Try several non-ASCII unicode characters.
         for code in [129, 500, 2 ** 8 - 1, 2 ** 16 - 1]:
-            code_with_unichr = str("# ") + unichr(code)
+            code_with_unichr = six.text_type("# ") + unichr(code)
             try:
                 safe_exec(code_with_unichr, {}, cache=DictCache({}))
             except UnicodeEncodeError:

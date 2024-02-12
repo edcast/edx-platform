@@ -12,14 +12,12 @@ from django.urls import reverse
 from edxval import api
 
 from cms.djangoapps.contentstore.tests.utils import CourseTestCase
-from cms.djangoapps.contentstore.transcript_storage_handlers import (
-    TranscriptionProviderErrorType,
-    validate_transcript_credentials
-)
 from cms.djangoapps.contentstore.utils import reverse_course_url
 from common.djangoapps.student.roles import CourseStaffRole
 from openedx.core.djangoapps.profile_images.tests.helpers import make_image_file
 from openedx.core.djangoapps.oauth_dispatch.jwt import create_jwt_for_user
+
+from ..transcript_settings import TranscriptionProviderErrorType, validate_transcript_credentials
 
 
 @ddt.ddt
@@ -96,7 +94,7 @@ class TranscriptCredentialsTest(CourseTestCase):
         )
     )
     @ddt.unpack
-    @patch('cms.djangoapps.contentstore.transcript_storage_handlers.update_3rd_party_transcription_service_credentials')
+    @patch('cms.djangoapps.contentstore.views.transcript_settings.update_3rd_party_transcription_service_credentials')
     def test_transcript_credentials_handler(self, request_payload, update_credentials_response, expected_status_code,
                                             expected_response, mock_update_credentials):
         """
@@ -213,7 +211,7 @@ class TranscriptDownloadTest(CourseTestCase):
         response = self.client.post(self.view_url, content_type='application/json')
         self.assertEqual(response.status_code, 405)
 
-    @patch('cms.djangoapps.contentstore.transcript_storage_handlers.get_video_transcript_data')
+    @patch('cms.djangoapps.contentstore.views.transcript_settings.get_video_transcript_data')
     def test_transcript_download_handler(self, mock_get_video_transcript_data):
         """
         Tests that transcript download handler works as expected.
@@ -305,9 +303,9 @@ class TranscriptUploadTest(CourseTestCase):
         response = self.client.get(self.view_url, content_type='application/json')
         self.assertEqual(response.status_code, 405)
 
-    @patch('cms.djangoapps.contentstore.transcript_storage_handlers.create_or_update_video_transcript')
+    @patch('cms.djangoapps.contentstore.views.transcript_settings.create_or_update_video_transcript')
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en']),
     )
     def test_transcript_upload_handler(self, mock_create_or_update_video_transcript):
@@ -372,7 +370,7 @@ class TranscriptUploadTest(CourseTestCase):
     )
     @ddt.unpack
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en']),
     )
     def test_transcript_upload_handler_missing_attrs(self, request_payload, expected_error_message):
@@ -385,7 +383,7 @@ class TranscriptUploadTest(CourseTestCase):
         self.assertEqual(json.loads(response.content.decode('utf-8'))['error'], expected_error_message)
 
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en', 'es'])
     )
     def test_transcript_upload_handler_existing_transcript(self):
@@ -407,7 +405,7 @@ class TranscriptUploadTest(CourseTestCase):
         )
 
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en']),
     )
     def test_transcript_upload_handler_with_image(self):
@@ -434,7 +432,7 @@ class TranscriptUploadTest(CourseTestCase):
             )
 
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en']),
     )
     def test_transcript_upload_handler_with_invalid_transcript(self):
@@ -590,9 +588,9 @@ class TranscriptUploadApiTest(CourseTestCase):
         response = self.client.get(self.view_url, content_type='application/json')
         self.assertEqual(response.status_code, 405)
 
-    @patch('cms.djangoapps.contentstore.transcript_storage_handlers.create_or_update_video_transcript')
+    @patch('cms.djangoapps.contentstore.views.transcript_settings.create_or_update_video_transcript')
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en']),
     )
     def test_transcript_upload_handler(self, mock_create_or_update_video_transcript):
@@ -657,7 +655,7 @@ class TranscriptUploadApiTest(CourseTestCase):
     )
     @ddt.unpack
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en']),
     )
     def test_transcript_upload_handler_missing_attrs(self, request_payload, expected_error_message):
@@ -670,7 +668,7 @@ class TranscriptUploadApiTest(CourseTestCase):
         self.assertEqual(json.loads(response.content.decode('utf-8'))['error'], expected_error_message)
 
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en', 'es'])
     )
     def test_transcript_upload_handler_existing_transcript(self):
@@ -692,7 +690,7 @@ class TranscriptUploadApiTest(CourseTestCase):
         )
 
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en']),
     )
     def test_transcript_upload_handler_with_image(self):
@@ -719,7 +717,7 @@ class TranscriptUploadApiTest(CourseTestCase):
             )
 
     @patch(
-        'cms.djangoapps.contentstore.transcript_storage_handlers.get_available_transcript_languages',
+        'cms.djangoapps.contentstore.views.transcript_settings.get_available_transcript_languages',
         Mock(return_value=['en']),
     )
     def test_transcript_upload_handler_with_invalid_transcript(self):

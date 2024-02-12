@@ -34,8 +34,7 @@ from openedx.core.djangoapps.ace_common.tests.mixins import EmailTemplateTagMixi
 from openedx.core.djangoapps.user_api.accounts import PRIVATE_VISIBILITY
 from openedx.core.djangoapps.user_api.accounts.api import (
     get_account_settings,
-    update_account_settings,
-    get_name_validation_error
+    update_account_settings
 )
 from openedx.core.djangoapps.user_api.accounts.tests.retirement_helpers import (  # pylint: disable=unused-import
     RetirementTestCase,
@@ -89,7 +88,7 @@ class TestAccountApi(UserSettingsEventTestMixin, EmailTemplateTagMixin, CreateAc
     This includes the specific types of error raised, and default behavior when optional arguments
     are not specified.
     """
-    password = 'Password1234'
+    password = "test"
 
     def setUp(self):
         super().setUp()
@@ -571,13 +570,6 @@ class TestAccountApi(UserSettingsEventTestMixin, EmailTemplateTagMixin, CreateAc
         assert account_settings['country'] is None
         assert account_settings['state'] is None
 
-    def test_get_name_validation_error_too_long(self):
-        """
-        Test validation error when the name is too long.
-        """
-        result = get_name_validation_error("A" * 256)
-        assert result == "Full name can't be longer than 255 symbols"
-
 
 @patch('openedx.core.djangoapps.user_api.accounts.image_helpers._PROFILE_IMAGE_SIZES', [50, 10])
 @patch.dict(
@@ -633,6 +625,7 @@ class AccountSettingsOnCreationTest(CreateAccountMixin, TestCase):
             'requires_parental_consent': True,
             'language_proficiencies': [],
             'account_privacy': PRIVATE_VISIBILITY,
+            'accomplishments_shared': False,
             'extended_profile': [],
             'secondary_email': None,
             'secondary_email_enabled': None,

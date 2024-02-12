@@ -2,7 +2,6 @@ define(
     ['backbone', 'underscore', 'underscore.string', 'js/utils/module'],
     function(Backbone, _, str, ModuleUtils) {
         'use strict';
-
         var XBlockInfo = Backbone.Model.extend({
 
             urlRoot: ModuleUtils.urlRoot,
@@ -168,15 +167,7 @@ define(
                 highlights_enabled: false,
                 highlights_enabled_for_messaging: false,
                 highlights_preview_only: true,
-                highlights_doc_url: '',
-                /**
-             * True if summary configuration is enabled.
-             */
-                summary_configuration_enabled: null,
-               /**
-                * List of tags of the unit. This list is managed by the content_tagging module.
-                */
-               tags: null,
+                highlights_doc_url: ''
             },
 
             initialize: function() {

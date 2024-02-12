@@ -16,10 +16,6 @@ from lxml import etree
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
 from requests import exceptions
 from social_core.pipeline.social_auth import associate_by_email
-from common.djangoapps.student.models import (
-    email_exists_or_retired,
-    username_exists_or_retired
-)
 
 from common.djangoapps.third_party_auth.models import OAuth2ProviderConfig, SAMLProviderData
 from openedx.core.djangolib.markup import Text
@@ -143,13 +139,16 @@ def user_exists(details):
     Returns:
         (bool): True if user with given details exists, `False` otherwise.
     """
+    user_queryset_filter = {}
     email = details.get('email')
     username = details.get('username')
     if email:
-        return email_exists_or_retired(email)
+        user_queryset_filter['email'] = email
     elif username:
-        # username__iexact preserves the original case insensitivity
-        return User.objects.filter(username__iexact=username).exists() or username_exists_or_retired(username)
+        user_queryset_filter['username__iexact'] = username
+
+    if user_queryset_filter:
+        return User.objects.filter(**user_queryset_filter).exists()
 
     return False
 

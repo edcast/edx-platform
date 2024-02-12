@@ -53,11 +53,9 @@ class Command(BaseCommand):
         checkout_on_ecommerce = options.get('checkout_on_ecommerce')
 
         # We are keeping id=1, because as of now, there are only one commerce configuration for the system.
-        pk_id = 1
         CommerceConfiguration.objects.update_or_create(
-            id=pk_id,
+            id=1,
             defaults={
-                'id': pk_id,
                 'enabled': not disable,
                 'checkout_on_ecommerce_service': checkout_on_ecommerce,
             }

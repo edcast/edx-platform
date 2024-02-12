@@ -23,7 +23,7 @@ class InMemorySystem(XMLParsingSystem, MakoDescriptorSystem):  # pylint: disable
     def __init__(self, xml_import_data):
         self.course_id = CourseKey.from_string(xml_import_data.course_id)
         self.default_class = xml_import_data.default_class
-        self._blocks = {}
+        self._descriptors = {}
 
         def get_policy(usage_id):
             """Return the policy data for the specified usage"""
@@ -42,19 +42,19 @@ class InMemorySystem(XMLParsingSystem, MakoDescriptorSystem):  # pylint: disable
         )
 
     def process_xml(self, xml):  # pylint: disable=method-hidden
-        """Parse `xml` as an XBlock, and add it to `self._blocks`"""
+        """Parse `xml` as an XBlock, and add it to `self._descriptors`"""
         self.get_asides = Mock(return_value=[])
-        block = self.xblock_from_node(
+        descriptor = self.xblock_from_node(
             etree.fromstring(xml),
             None,
             CourseLocationManager(self.course_id),
         )
-        self._blocks[str(block.location)] = block
-        return block
+        self._descriptors[str(descriptor.location)] = descriptor
+        return descriptor
 
     def load_item(self, location, for_parent=None):  # pylint: disable=method-hidden, unused-argument
-        """Return the block loaded for `location`"""
-        return self._blocks[str(location)]
+        """Return the descriptor loaded for `location`"""
+        return self._descriptors[str(location)]
 
 
 class XModuleXmlImportTest(TestCase):

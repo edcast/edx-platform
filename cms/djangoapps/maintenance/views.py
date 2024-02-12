@@ -94,7 +94,7 @@ class MaintenanceBaseView(View):
         """
         A short method to render_to_response that renders response.
         """
-        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        if self.request.is_ajax():
             return JsonResponse(self.context)
         return render_to_response(self.template, self.context)
 

@@ -13,7 +13,6 @@
         _.each(unfakes, function(u) {
             return u();
         });
-        // eslint-disable-next-line no-return-assign
         return unfakes = [];
     };
 
@@ -22,7 +21,6 @@
         originalThing = owner[thingToFake];
         owner[thingToFake] = newThing;
         return unfakes.push(function() {
-            // eslint-disable-next-line no-return-assign
             return owner[thingToFake] = originalThing;
         });
     };
@@ -52,7 +50,6 @@
 
         _.each(methodsToSpy, function(methodName) {
             spies[methodName] = jasmine.createSpy('' + classToFake + '#' + methodName);
-            // eslint-disable-next-line no-return-assign
             return fakeClass.prototype[methodName] = function() {
                 return spies[methodName].apply(this, arguments);
             };

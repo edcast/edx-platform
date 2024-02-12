@@ -1,0 +1,26 @@
+<script type="text/javascript">
+  % if edcast_data:
+      <%! import simplejson as json %>
+      (function(){
+          var context = ${ json.dumps(edcast_data)|n };
+          //It will give context name to edcast xblock
+          window.EDCAST_CONTEXT = context;
+          $('.sequence').bind('sequence:change', function(){
+              var _this = this;
+              window.setTimeout(function(){
+                  var unitElement = $(_this).find('a.active');
+                  context.unit = {id: unitElement.data('edcast-unit-id'), name: unitElement.data('edcast-unit-name')};
+                  var message = {
+                                    event: "context.set",
+                                    data: context
+                                 };
+                  parent.postMessage(JSON.stringify(message), '*')
+              }, 0);
+          })
+      })();
+  % else:
+       parent.postMessage(JSON.stringify({"event":"context.clear"}), '*')
+  % endif
+</script>
+
+

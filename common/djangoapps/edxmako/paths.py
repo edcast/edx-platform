@@ -1,11 +1,14 @@
 """
 Set up lookup paths for mako templates.
 """
+
+
 import contextlib
 import hashlib
 import os
 
 import pkg_resources
+import six
 from django.conf import settings
 from mako.exceptions import TopLevelLookupException
 from mako.lookup import TemplateLookup
@@ -51,7 +54,7 @@ class DynamicTemplateLookup(TemplateLookup):
         # and "foo.html.py" in the module directory has no way to know that.
         # Update the module_directory argument to point to a directory
         # specifically for this lookup path.
-        unique = hashlib.md5((":".join(str(d) for d in self.directories)).encode()).hexdigest()
+        unique = hashlib.md5(six.b(":".join(str(d) for d in self.directories))).hexdigest()
         self.template_args['module_directory'] = os.path.join(self.__original_module_directory, unique)
 
         # Also clear the internal caches. Ick.

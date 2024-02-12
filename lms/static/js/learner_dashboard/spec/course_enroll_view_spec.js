@@ -32,7 +32,6 @@ describe('Course Enroll View', () => {
 
     beforeEach(() => {
         // Stub analytics tracking
-        // eslint-disable-next-line no-undef
         window.analytics = jasmine.createSpyObj('analytics', ['track']);
 
         // NOTE: This data is redefined prior to each test case so that tests
@@ -116,7 +115,6 @@ describe('Course Enroll View', () => {
             urlModel = new Backbone.Model(urlMap);
         }
         view = new CourseEnrollView({
-            // eslint-disable-next-line no-undef
             $parentEl: $('.course-actions'),
             model: courseCardModel,
             enrollModel: courseEnrollModel,
@@ -186,7 +184,6 @@ describe('Course Enroll View', () => {
 
         expect(view.$('.enroll-button').length).toBe(1);
 
-        // eslint-disable-next-line no-undef
         spyOn(courseEnrollModel, 'save');
 
         view.$('.enroll-button').click();
@@ -197,7 +194,6 @@ describe('Course Enroll View', () => {
     it('should enroll learner when enroll button is clicked with multiple course runs available', () => {
         setupView(multiCourseRunList);
 
-        // eslint-disable-next-line no-undef
         spyOn(courseEnrollModel, 'save');
 
         view.$('.run-select').val(multiCourseRunList[1].key);
@@ -216,14 +212,12 @@ describe('Course Enroll View', () => {
         expect(view.$('.enroll-button').length).toBe(1);
         expect(view.trackSelectionUrl).toBeDefined();
 
-        // eslint-disable-next-line no-undef
         spyOn(CourseEnrollView, 'redirect');
 
         view.enrollSuccess();
 
         expect(CourseEnrollView.redirect).toHaveBeenCalledWith(
-            view.trackSelectionUrl + courseCardModel.get('course_run_key'),
-        );
+            view.trackSelectionUrl + courseCardModel.get('course_run_key'));
     });
 
     it('should redirect to track selection when enrollment in an unspecified mode is attempted', () => {
@@ -235,7 +229,6 @@ describe('Course Enroll View', () => {
         expect(view.$('.enroll-button').length).toBe(1);
         expect(view.trackSelectionUrl).toBeDefined();
 
-        // eslint-disable-next-line no-undef
         spyOn(CourseEnrollView, 'redirect');
 
         view.enrollSuccess();
@@ -256,7 +249,6 @@ describe('Course Enroll View', () => {
         expect(view.dashboardUrl).not.toBeDefined();
         expect(view.trackSelectionUrl).not.toBeDefined();
 
-        // eslint-disable-next-line no-undef
         spyOn(CourseEnrollView, 'redirect');
 
         view.enrollSuccess();
@@ -270,7 +262,6 @@ describe('Course Enroll View', () => {
         expect(view.$('.enroll-button').length).toBe(1);
         expect(view.trackSelectionUrl).toBeDefined();
 
-        // eslint-disable-next-line no-undef
         spyOn(CourseEnrollView, 'redirect');
 
         view.enrollError(courseEnrollModel, { status: 500 });
@@ -292,7 +283,6 @@ describe('Course Enroll View', () => {
         expect(view.$('.enroll-button').length).toBe(1);
         expect(view.trackSelectionUrl).toBeDefined();
 
-        // eslint-disable-next-line no-undef
         spyOn(CourseEnrollView, 'redirect');
 
         view.enrollError(courseEnrollModel, response);
@@ -304,7 +294,6 @@ describe('Course Enroll View', () => {
 
     it('sends analytics event when enrollment succeeds', () => {
         setupView(singleCourseRunList, urls);
-        // eslint-disable-next-line no-undef
         spyOn(CourseEnrollView, 'redirect');
         view.enrollSuccess();
         expect(window.analytics.track).toHaveBeenCalledWith(

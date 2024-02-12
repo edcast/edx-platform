@@ -6,6 +6,7 @@ Unit tests for sending course email
 import json
 import os
 from unittest import skipIf
+from unittest import skip
 from unittest.mock import Mock, patch
 
 import ddt
@@ -87,7 +88,7 @@ class EmailSendFromDashboardTestCase(SharedModuleStoreTestCase):
         """
         Log in self.client as user.
         """
-        self.client.login(username=user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=user.username, password="test")
 
     def goto_instructor_dash_email_view(self):
         """
@@ -288,7 +289,7 @@ class LocalizedFromAddressCourseLangTestCase(SendEmailWithMockedUgettextMixin, E
         message = self.send_email()
         self.assertRegex(message.from_email, 'AR .* Course Staff')
 
-
+@skip('we remove view in edcast')
 @patch('lms.djangoapps.bulk_email.models.html_to_text', Mock(return_value='Mocking CourseEmail.text_message', autospec=True))  # lint-amnesty, pylint: disable=line-too-long
 class TestEmailSendFromDashboardMockedHtmlToText(EmailSendFromDashboardTestCase):
     """
@@ -676,7 +677,8 @@ class TestEmailSendFromDashboardMockedHtmlToText(EmailSendFromDashboardTestCase)
             assert 'bulk_email/email/optout/' in plain_template
             assert 'bulk_email/email/optout/' in html_template
 
-
+@skip('we remove view in edcast')
+@attr(shard=1)
 @skipIf(os.environ.get("TRAVIS") == 'true', "Skip this test in Travis CI.")
 class TestEmailSendFromDashboard(EmailSendFromDashboardTestCase):
     """

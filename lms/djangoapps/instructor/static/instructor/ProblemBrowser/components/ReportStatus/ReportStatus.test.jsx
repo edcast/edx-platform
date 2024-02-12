@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-redeclare
 /* global test,describe,expect */
 import React from 'react';
 import renderer from 'react-test-renderer';
@@ -24,8 +23,8 @@ describe('ReportStatus component', () => {
             <ReportStatus
                 error={null}
                 inProgress={false}
-                reportName="some-report-name"
-                reportPath="/some/report/path.csv"
+                reportName={'some-report-name'}
+                reportPath={'/some/report/path.csv'}
                 succeeded
             />,
         );
@@ -36,7 +35,7 @@ describe('ReportStatus component', () => {
     test('render error status', () => {
         const component = renderer.create(
             <ReportStatus
-                error="some error status"
+                error={'some error status'}
                 inProgress={false}
                 reportName={null}
                 reportPath={null}

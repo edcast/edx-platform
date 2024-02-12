@@ -38,7 +38,6 @@ from pytz import UTC
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 
-from common.djangoapps.student.toggles import should_redirect_to_courseware_after_enrollment
 from common.djangoapps.track import views as track_views
 from lms.djangoapps.bulk_email.models import Optout
 from common.djangoapps.course_modes.models import CourseMode
@@ -401,10 +400,8 @@ def change_enrollment(request, check_access=True):
                 reverse("course_modes_choose", kwargs={'course_id': str(course_id)})
             )
 
-        if should_redirect_to_courseware_after_enrollment():
-            return HttpResponse(reverse('courseware', args=[str(course_id)]))
-        else:
-            return HttpResponse()
+        # Otherwise, there is only one mode available (the default)
+        return HttpResponse()
     elif action == "unenroll":
         if configuration_helpers.get_value(
             "DISABLE_UNENROLLMENT",

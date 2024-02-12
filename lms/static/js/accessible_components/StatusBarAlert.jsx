@@ -4,9 +4,8 @@ Wrapper for React/Paragon accessible status bar
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {StatusAlert} from '@edx/paragon/static';
+import { StatusAlert } from '@edx/paragon/static';
 
-// eslint-disable-next-line import/prefer-default-export
 export class StatusAlertRenderer {
     constructor(message, selector, afterselector) {
         this.shiftFocus = this.shiftFocus.bind(this);
@@ -20,11 +19,11 @@ export class StatusAlertRenderer {
       */
             ReactDOM.render(
                 <StatusAlert
-                    alertType="warning"
-                    dismissible
-                    open
+                    alertType='warning'
+                    dismissible={true}
+                    open={true}
                     dialog={message}
-                    dismissable
+                    dismissable={true}
                     onClose={() => this.shiftFocus(afterselector)}
                 />,
                 document.querySelector(selector)

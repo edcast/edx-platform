@@ -112,8 +112,8 @@ class MasqueradeView(View):
             group_id=None,
             user_name=None,
         )
-        block = modulestore().get_course(course_key)
-        partitions = get_all_partitions_for_course(block, active_only=True)
+        descriptor = modulestore().get_course(course_key)
+        partitions = get_all_partitions_for_course(descriptor, active_only=True)
         data = {
             'success': True,
             'active': {

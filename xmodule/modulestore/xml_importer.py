@@ -29,7 +29,6 @@ import re
 from abc import abstractmethod
 
 import xblock
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
 from lxml import etree
 from opaque_keys.edx.keys import UsageKey
@@ -43,6 +42,7 @@ from common.djangoapps.util.monitoring import monitor_import_failure
 from xmodule.assetstore import AssetMetadata
 from xmodule.contentstore.content import StaticContent
 from xmodule.errortracker import make_error_tracker
+from xmodule.library_tools import LibraryToolsService
 from xmodule.modulestore import ModuleStoreEnum
 from xmodule.modulestore.django import ASSET_IGNORE_REGEX
 from xmodule.modulestore.exceptions import DuplicateCourseError
@@ -457,7 +457,7 @@ class ImportManager:
     @abstractmethod
     def get_courselike(self, courselike_key, runtime, dest_id):
         """
-        Given a key, a runtime, and an intended destination key, get the block for the courselike
+        Given a key, a runtime, and an intended destination key, get the descriptor for the courselike
         we'll be importing into.
         """
         raise NotImplementedError
@@ -739,7 +739,7 @@ class LibraryImportManager(ImportManager):
 
     def get_courselike(self, courselike_key, runtime, dest_id):
         """
-        Get the block of the library from the XML import modulestore.
+        Get the descriptor of the library from the XML import modulestore.
         """
         source_library = self.xml_module_store.get_library(courselike_key)
         library, library_data_path = self.import_courselike(
@@ -783,7 +783,7 @@ def import_library_from_xml(*args, **kwargs):
     return list(manager.run_imports())
 
 
-def _update_and_import_block(  # pylint: disable=too-many-statements
+def _update_and_import_block(
         block, store, user_id,
         source_course_id, dest_course_id,
         do_import_static=True, runtime=None):
@@ -880,7 +880,7 @@ def _update_and_import_block(  # pylint: disable=too-many-statements
         # according to this existing library and library content block.
         if block.source_library_id and store.get_library(block.source_library_key):
             # If the library content block is already in the course, then don't
-            # sync the children when we re-import it. This lets us address
+            # refresh the children when we re-import it. This lets us address
             # TNL-7507 (Randomized Content Block Settings Lost in Course Import)
             # while still avoiding AA-310, where the IDs of the children for an
             # existing library_content block might be altered, losing student
@@ -900,14 +900,10 @@ def _update_and_import_block(  # pylint: disable=too-many-statements
             try:
                 # Update library content block's children on draft branch
                 with store.branch_setting(branch_setting=ModuleStoreEnum.Branch.draft_preferred):
-                    try:
-                        block.sync_from_library()
-                    except ObjectDoesNotExist:
-                        # If the source library does not exist, that's OK, the library content will still kinda work.
-                        # Unfortunately, any setting defaults that are set in the library will be missing.
-                        # TODO save library default settings to course's OLX and then load them here if available:
-                        # https://github.com/openedx/edx-platform/issues/33742
-                        pass
+                    LibraryToolsService(store, user_id).update_children(
+                        block,
+                        version=block.source_library_version,
+                    )
             except ValueError as err:
                 # The specified library version does not exist.
                 log.error(err)
@@ -978,7 +974,7 @@ def _import_course_draft(
         # in the list of children since they would have been
         # filtered out from the non-draft store export.
         if parent_url is not None and index is not None:
-            course_key = block.location.course_key
+            course_key = descriptor.location.course_key
             parent_location = UsageKey.from_string(parent_url).map_into_course(course_key)
 
             # IMPORTANT: Be sure to update the parent in the NEW namespace
@@ -1022,7 +1018,7 @@ def _import_course_draft(
                     # Therefore only process verticals at the unit level, assuming that any other
                     # verticals must be descendants.
                     if 'index_in_children_list' in xml:
-                        block = system.process_xml(xml)
+                        descriptor = system.process_xml(xml)
 
                         # HACK: since we are doing partial imports of drafts
                         # the vertical doesn't have the 'url-name' set in the
@@ -1030,14 +1026,14 @@ def _import_course_draft(
                         # aka sequential), so we have to replace the location.name
                         # with the XML filename that is part of the pack
                         filename, __ = os.path.splitext(filename)
-                        block.location = block.location.replace(name=filename)
+                        descriptor.location = descriptor.location.replace(name=filename)
 
-                        index = index_in_children_list(block)
-                        parent_url = get_parent_url(block, xml)
-                        draft_url = str(block.location)
+                        index = index_in_children_list(descriptor)
+                        parent_url = get_parent_url(descriptor, xml)
+                        draft_url = str(descriptor.location)
 
                         draft = draft_node_constructor(
-                            block=block, url=draft_url, parent_url=parent_url, index=index
+                            block=descriptor, url=draft_url, parent_url=parent_url, index=index
                         )
                         drafts.append(draft)
 
@@ -1051,7 +1047,7 @@ def _import_course_draft(
         try:
             _import_block(draft.module)
         except Exception:  # pylint: disable=broad-except
-            logging.exception(f'Course import {source_course_id}: while importing draft block {draft.module}')
+            logging.exception(f'Course import {source_course_id}: while importing draft descriptor {draft.module}')
 
 
 def allowed_metadata_by_category(category):

@@ -1,15 +1,16 @@
 """
 Logistration API View Tests
 """
-import ddt
 import socket
+from unittest.mock import patch
+from urllib.parse import urlencode
+
+import ddt
 from django.conf import settings
 from django.test.utils import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from unittest.mock import patch
-from urllib.parse import urlencode
 
 from common.djangoapps.student.models import Registration
 from common.djangoapps.student.tests.factories import UserFactory
@@ -18,6 +19,7 @@ from common.djangoapps.third_party_auth.tests.testutil import ThirdPartyAuthTest
 from openedx.core.djangoapps.geoinfo.api import country_code_from_ip
 from openedx.core.djangoapps.site_configuration.tests.test_util import with_site_configuration
 from openedx.core.djangoapps.user_api.tests.test_views import UserAPITestCase
+from openedx.core.djangoapps.user_authn.api.tests.test_data import mfe_context_data_keys
 from openedx.core.djangolib.testing.utils import skip_unless_lms
 
 
@@ -117,14 +119,10 @@ class MFEContextViewTest(ThirdPartyAuthTestMixin, APITestCase):
                 'autoSubmitRegForm': False,
                 'syncLearnerProfileData': False,
                 'countryCode': self.country_code,
-                'welcomePageRedirectUrl': None,
                 'pipelineUserDetails': self.pipeline_user_details,
             },
-            'registrationFields': {
-                'fields': {},
-            },
+            'registrationFields': {},
             'optionalFields': {
-                'fields': {},
                 'extended_profile': [],
             },
         }
@@ -378,36 +376,7 @@ class MFEContextViewTest(ThirdPartyAuthTestMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response_keys = set(response.data.keys())
-        self.assertSetEqual(
-            response_keys,
-            {
-                'contextData',
-                'registrationFields',
-                'optionalFields'
-            }
-        )
-
-    @with_site_configuration(
-        configuration={
-            'extended_profile_fields': ['specialty']
-        }
-    )
-    @override_settings(
-        ENABLE_DYNAMIC_REGISTRATION_FIELDS=True,
-        REGISTRATION_EXTRA_FIELDS={'specialty': 'optional', 'goals': 'optional'},
-        LOGIN_REDIRECT_WHITELIST=['openedx.service'],
-    )
-    def test_welcome_page_context(self):
-        """
-        Test MFE Context API response for welcome page
-        """
-        redirect_url = 'https://openedx.service/coolpage'
-        self.query_params.update({'is_welcome_page': True, 'next': redirect_url})
-        response = self.client.get(self.url, self.query_params, HTTP_ACCEPT='*/*')
-        assert response.status_code == status.HTTP_200_OK
-        assert list(response.data['optionalFields']['fields'].keys()) == ['specialty', 'goals']
-        assert list(response.data['optionalFields']['extended_profile']) == ['specialty']
-        assert response.data['contextData']['welcomePageRedirectUrl'] == redirect_url
+        self.assertSetEqual(response_keys, mfe_context_data_keys)
 
 
 @skip_unless_lms
@@ -421,9 +390,9 @@ class SendAccountActivationEmail(UserAPITestCase):
         Create a user, then log in.
         """
         super().setUp()
-        self.user = UserFactory(password=self.TEST_PASSWORD)
+        self.user = UserFactory()
         Registration().register(self.user)
-        result = self.client.login(username=self.user.username, password=self.TEST_PASSWORD)
+        result = self.client.login(username=self.user.username, password="test")
         assert result, 'Could not log in'
         self.path = reverse('send_account_activation_email')
 

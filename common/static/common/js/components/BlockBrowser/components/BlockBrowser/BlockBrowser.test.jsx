@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-redeclare
 /* global jest,test,describe,expect */
 import React from 'react';
 import renderer from 'react-test-renderer';

@@ -13,7 +13,13 @@ from django.dispatch import receiver
 from edx_toggles.toggles import SettingToggle
 from opaque_keys.edx.keys import CourseKey
 from openedx_events.content_authoring.data import CourseCatalogData, CourseScheduleData
-from openedx_events.content_authoring.signals import COURSE_CATALOG_INFO_CHANGED
+from openedx_events.content_authoring.signals import (
+    COURSE_CATALOG_INFO_CHANGED,
+    XBLOCK_DELETED,
+    XBLOCK_DUPLICATED,
+    XBLOCK_PUBLISHED,
+)
+from openedx_events.event_bus import get_producer
 from pytz import UTC
 
 from cms.djangoapps.contentstore.courseware_index import (
@@ -22,7 +28,7 @@ from cms.djangoapps.contentstore.courseware_index import (
     LibrarySearchIndexer,
 )
 from common.djangoapps.track.event_transaction_utils import get_event_transaction_id, get_event_transaction_type
-from common.djangoapps.util.block_utils import yield_dynamic_block_descendants
+from common.djangoapps.util.block_utils import yield_dynamic_descriptor_descendants
 from lms.djangoapps.grades.api import task_compute_all_grades_for_course
 from openedx.core.djangoapps.content.learning_sequences.api import key_supports_outlines
 from openedx.core.djangoapps.discussions.tasks import update_discussions_settings_from_course_task
@@ -153,6 +159,57 @@ def listen_for_course_publish(sender, course_key, **kwargs):  # pylint: disable=
     transaction.on_commit(lambda: emit_catalog_info_changed_signal(course_key))
 
 
+@receiver(COURSE_CATALOG_INFO_CHANGED)
+def listen_for_course_catalog_info_changed(sender, signal, **kwargs):
+    """
+    Publish COURSE_CATALOG_INFO_CHANGED signals onto the event bus.
+    """
+    get_producer().send(
+        signal=COURSE_CATALOG_INFO_CHANGED, topic='course-catalog-info-changed',
+        event_key_field='catalog_info.course_key', event_data={'catalog_info': kwargs['catalog_info']},
+        event_metadata=kwargs['metadata'],
+    )
+
+
+@receiver(XBLOCK_PUBLISHED)
+def listen_for_xblock_published(sender, signal, **kwargs):
+    """
+    Publish XBLOCK_PUBLISHED signals onto the event bus.
+    """
+    if settings.FEATURES.get("ENABLE_SEND_XBLOCK_EVENTS_OVER_BUS"):
+        get_producer().send(
+            signal=XBLOCK_PUBLISHED, topic='xblock-published',
+            event_key_field='xblock_info.usage_key', event_data={'xblock_info': kwargs['xblock_info']},
+            event_metadata=kwargs['metadata'],
+        )
+
+
+@receiver(XBLOCK_DELETED)
+def listen_for_xblock_deleted(sender, signal, **kwargs):
+    """
+    Publish XBLOCK_DELETED signals onto the event bus.
+    """
+    if settings.FEATURES.get("ENABLE_SEND_XBLOCK_EVENTS_OVER_BUS"):
+        get_producer().send(
+            signal=XBLOCK_DELETED, topic='xblock-deleted',
+            event_key_field='xblock_info.usage_key', event_data={'xblock_info': kwargs['xblock_info']},
+            event_metadata=kwargs['metadata'],
+        )
+
+
+@receiver(XBLOCK_DUPLICATED)
+def listen_for_xblock_duplicated(sender, signal, **kwargs):
+    """
+    Publish XBLOCK_DUPLICATED signals onto the event bus.
+    """
+    if settings.FEATURES.get("ENABLE_SEND_XBLOCK_EVENTS_OVER_BUS"):
+        get_producer().send(
+            signal=XBLOCK_DUPLICATED, topic='xblock-duplicated',
+            event_key_field='xblock_info.usage_key', event_data={'xblock_info': kwargs['xblock_info']},
+            event_metadata=kwargs['metadata'],
+        )
+
+
 @receiver(SignalHandler.course_deleted)
 def listen_for_course_delete(sender, course_key, **kwargs):  # pylint: disable=unused-argument
     """
@@ -195,7 +252,7 @@ def handle_item_deleted(**kwargs):
         usage_key = usage_key.for_branch(None)
         course_key = usage_key.course_key
         deleted_block = modulestore().get_item(usage_key)
-        for block in yield_dynamic_block_descendants(deleted_block, kwargs.get('user_id')):
+        for block in yield_dynamic_descriptor_descendants(deleted_block, kwargs.get('user_id')):
             # Remove prerequisite milestone data
             gating_api.remove_prerequisite(block.location)
             # Remove any 'requires' course content milestone relationships

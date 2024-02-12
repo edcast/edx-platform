@@ -4,6 +4,7 @@ Test cases for recover account management command
 import re
 from tempfile import NamedTemporaryFile
 import pytest
+import six
 
 from django.core import mail
 from django.conf import settings
@@ -39,7 +40,7 @@ class RecoverAccountTests(TestCase):
         """Write a test csv file with the lines provided"""
         csv.write(b"username,current_email,desired_email\n")
         for line in lines:
-            csv.write(line.encode())
+            csv.write(six.b(line))
         csv.seek(0)
         return csv
 

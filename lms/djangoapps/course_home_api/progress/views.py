@@ -21,9 +21,8 @@ from lms.djangoapps.course_blocks.api import get_course_blocks
 from lms.djangoapps.course_blocks.transformers import start_date
 
 from lms.djangoapps.ccx.custom_exception import CCXLocatorValidationException
-from lms.djangoapps.course_home_api.utils import get_course_or_403
 from lms.djangoapps.courseware.courses import (
-    get_course_blocks_completion_summary, get_studio_url,
+    get_course_blocks_completion_summary, get_course_with_access, get_studio_url,
 )
 from lms.djangoapps.courseware.masquerade import setup_masquerade
 from lms.djangoapps.courseware.views.views import credit_course_requirements, get_cert_data
@@ -129,7 +128,6 @@ class ProgressTabView(RetrieveAPIView):
 
         * 200 on success with above fields.
         * 401 if the user is not authenticated or not enrolled.
-        * 403 if the user does not have access to the course.
         * 404 if the course is not available or cannot be seen.
     """
 
@@ -192,7 +190,7 @@ class ProgressTabView(RetrieveAPIView):
         student = self._get_student_user(request, course_key, student_id, is_staff)
         username = get_enterprise_learner_generic_name(request) or student.username
 
-        course = get_course_or_403(student, 'load', course_key, check_if_enrolled=False)
+        course = get_course_with_access(student, 'load', course_key, check_if_enrolled=False)
 
         course_overview = CourseOverview.get_from_id(course_key)
         enrollment = CourseEnrollment.get_enrollment(student, course_key)
@@ -228,9 +226,8 @@ class ProgressTabView(RetrieveAPIView):
             user_grade = course_grade.percent
             user_has_passing_grade = user_grade >= course.lowest_passing_grade
 
-        block = modulestore().get_course(course_key)
-        grading_policy = block.grading_policy
-        disable_progress_graph = block.disable_progress_graph
+        descriptor = modulestore().get_course(course_key)
+        grading_policy = descriptor.grading_policy
         verification_status = IDVerificationService.user_status(student)
         verification_link = None
         if verification_status['status'] is None or verification_status['status'] == 'expired':
@@ -260,7 +257,6 @@ class ProgressTabView(RetrieveAPIView):
             'username': username,
             'user_has_passing_grade': user_has_passing_grade,
             'verification_data': verification_data,
-            'disable_progress_graph': disable_progress_graph,
         }
         context = self.get_serializer_context()
         context['staff_access'] = is_staff

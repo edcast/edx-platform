@@ -2,12 +2,13 @@
 Helper classes and methods for running modulestore tests without Django.
 """
 import os
-from contextlib import contextmanager, ExitStack
+from contextlib import contextmanager
 from importlib import import_module
 from shutil import rmtree
 from tempfile import mkdtemp
 from uuid import uuid4
 
+from contextlib2 import ExitStack
 from path import Path as path
 
 from xmodule.contentstore.mongo import MongoContentStore

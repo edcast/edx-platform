@@ -148,12 +148,9 @@ class StructuredTagsAsideTestCase(ModuleStoreTestCase):
         tree = etree.parse(StringIO(problem_html), parser)
 
         main_div_nodes = tree.xpath('/html/body/div/section/div')
-        self.assertEqual(len(main_div_nodes), 2)
+        self.assertEqual(len(main_div_nodes), 1)
 
-        loader_div_node = main_div_nodes[0]
-        self.assertIn('ui-loading', loader_div_node.get('class'))
-
-        div_node = main_div_nodes[1]
+        div_node = main_div_nodes[0]
         self.assertEqual(div_node.get('data-init'), 'StructuredTagsInit')
         self.assertEqual(div_node.get('data-runtime-class'), 'PreviewRuntime')
         self.assertEqual(div_node.get('data-block-type'), 'tagging_aside')
@@ -183,11 +180,11 @@ class StructuredTagsAsideTestCase(ModuleStoreTestCase):
         self.assertEqual(option_values2, ['Learned a few things', 'Learned everything', 'Learned nothing'])
 
         # Now ensure the acid_aside is not in the result
-        self.assertNotRegex(problem_html, r"data-block-type=[\"\']acid_aside[\"\']")
+        self.assertNotRegexpMatches(problem_html, r"data-block-type=[\"\']acid_aside[\"\']")  # lint-amnesty, pylint: disable=deprecated-method
 
         # Ensure about video don't have asides
         video_html = get_preview_fragment(request, self.video, context).content
-        self.assertNotRegex(video_html, "<select")
+        self.assertNotRegexpMatches(video_html, "<select")  # lint-amnesty, pylint: disable=deprecated-method
 
     @ddt.data(AsideUsageKeyV1, AsideUsageKeyV2)
     def test_handle_requests(self, aside_key_class):

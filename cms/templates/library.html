@@ -4,7 +4,7 @@
     <% return "content_libraries" %>
 </%def>
 <%!
-from cms.djangoapps.contentstore.helpers import xblock_studio_url, xblock_type_display_name
+from cms.djangoapps.contentstore.views.helpers import xblock_studio_url, xblock_type_display_name
 from django.utils.translation import gettext as _
 from openedx.core.djangolib.js_utils import dump_js_escaped_json
 from openedx.core.djangolib.markup import HTML, Text
@@ -61,12 +61,13 @@ from openedx.core.djangolib.markup import HTML, Text
                         <span class="icon fa fa-plus icon-inline" aria-hidden="true"></span> <span class="action-button-text">${_("Add Component")}</span>
                     </a>
                 </li>
-                <li class="action-item action-toggle-preview nav-item">
+                <%doc><li class="action-item action-toggle-preview nav-item">
                     <a href="#" class="button button-toggle-preview action-button toggle-preview-button is-hidden">
                         <span class="icon fa fa-refresh" aria-hidden="true"></span>
                         <span class="action-button-text preview-text"></span>
                     </a>
                 </li>
+                </%doc>
             </ul>
         </nav>
     </header>

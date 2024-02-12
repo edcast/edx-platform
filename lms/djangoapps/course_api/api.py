@@ -82,7 +82,7 @@ def course_detail(request, username, course_key):
     return overview
 
 
-def _filter_by_search(course_queryset, search_term, mobile_search=False):
+def _filter_by_search(course_queryset, search_term):
     """
     Filters a course queryset by the specified search term.
     """
@@ -101,13 +101,6 @@ def _filter_by_search(course_queryset, search_term, mobile_search=False):
 
     search_courses_ids = {course['data']['id'] for course in search_courses['results']}
 
-    if mobile_search is True:
-        course_limit = getattr(settings, 'MOBILE_SEARCH_COURSE_LIMIT', 100)
-        courses = [course for course in course_queryset[:course_limit] if str(course.id) in search_courses_ids]
-        return LazySequence(
-            iter(courses),
-            est_len=len(courses)
-        )
     return LazySequence(
         (
             course for course in course_queryset
@@ -123,9 +116,7 @@ def list_courses(request,
                  filter_=None,
                  search_term=None,
                  permissions=None,
-                 active_only=False,
-                 course_keys=None,
-                 mobile_search=False):
+                 active_only=False):
     """
     Yield all available courses.
 
@@ -155,21 +146,13 @@ def list_courses(request,
             If specified, it filters visible `CourseOverview` objects by
             checking if each permission specified is granted for the username.
         active_only (bool): Optional parameter that enables fetching active courses only.
-        course_keys (list[str]):
-            If specified, it filters visible `CourseOverview` objects by
-            the course keys (ids) provided
-        mobile_search (bool):
-            Optional parameter that limits the number of returned courses
-            to MOBILE_SEARCH_COURSE_LIMIT.
 
     Return value:
         Yield `CourseOverview` objects representing the collection of courses.
     """
     user = get_effective_user(request.user, username)
-    course_qs = get_courses(
-        user, org=org, filter_=filter_, permissions=permissions, active_only=active_only, course_keys=course_keys
-    )
-    course_qs = _filter_by_search(course_qs, search_term, mobile_search)
+    course_qs = get_courses(user, org=org, filter_=filter_, permissions=permissions, active_only=active_only)
+    course_qs = _filter_by_search(course_qs, search_term)
     return course_qs
 
 

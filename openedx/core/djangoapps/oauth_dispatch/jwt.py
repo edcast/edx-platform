@@ -5,14 +5,12 @@ import json
 import logging
 from time import time
 
-import jwt
 from django.conf import settings
 from edx_django_utils.monitoring import increment, set_custom_attribute
 from edx_rbac.utils import create_role_auth_claim_for_user
 from edx_toggles.toggles import SettingToggle
-from jwt import PyJWK
-from jwt.utils import base64url_encode
-from oauth2_provider.models import Application
+from jwkest import jwk
+from jwkest.jws import JWS
 
 from common.djangoapps.student.models import UserProfile, anonymous_id_for_user
 
@@ -80,11 +78,10 @@ def create_jwt_token_dict(token_dict, oauth_adapter, use_asymmetric_key=None):
     # .. custom_attribute_name: create_jwt_grant_type
     # .. custom_attribute_description: The grant type of the newly created JWT.
     set_custom_attribute('create_jwt_grant_type', grant_type)
-    scopes = _get_updated_scopes(token_dict['scope'].split(' '), grant_type)
 
     jwt_access_token = _create_jwt(
         access_token.user,
-        scopes=scopes,
+        scopes=token_dict['scope'].split(' '),
         expires_in=jwt_expires_in,
         use_asymmetric_key=use_asymmetric_key,
         is_restricted=oauth_adapter.is_client_restricted(client),
@@ -93,16 +90,11 @@ def create_jwt_token_dict(token_dict, oauth_adapter, use_asymmetric_key=None):
     )
 
     jwt_token_dict = token_dict.copy()
-    # Note: only "refresh_token" is not overwritten at this point.
-    # At this time, the user_id scope added for grant type password is only added to the
-    # JWT, and is not added for the DOT access token or refresh token, so we must override
-    # here. If this inconsistency becomes an issue, then the user_id scope should be
-    # added earlier with the DOT tokens, and we would no longer need to override "scope".
+    # Note: only "scope" is not overwritten at this point.
     jwt_token_dict.update({
         "access_token": jwt_access_token,
         "token_type": "JWT",
         "expires_in": jwt_expires_in,
-        "scope": ' '.join(scopes),
     })
     return jwt_token_dict
 
@@ -174,7 +166,9 @@ def _create_jwt(
     else:
         increment('create_symmetric_jwt_count')
 
-    # Scopes `email` and `profile` are included for legacy compatibility.
+    # Default scopes should only contain non-privileged data.
+    # Do not be misled by the fact that `email` and `profile` are default scopes. They
+    # were included for legacy compatibility, even though they contain privileged data.
     scopes = scopes or ['email', 'profile']
     iat, exp = _compute_time_fields(expires_in)
 
@@ -279,28 +273,17 @@ def _attach_profile_claim(payload, user):
 
 def _encode_and_sign(payload, use_asymmetric_key, secret):
     """Encode and sign the provided payload."""
+    keys = jwk.KEYS()
 
     if use_asymmetric_key:
-        key = json.loads(settings.JWT_AUTH['JWT_PRIVATE_SIGNING_JWK'])
+        serialized_keypair = json.loads(settings.JWT_AUTH['JWT_PRIVATE_SIGNING_JWK'])
+        keys.add(serialized_keypair)
         algorithm = settings.JWT_AUTH['JWT_SIGNING_ALGORITHM']
     else:
-        secret = secret if secret else settings.JWT_AUTH['JWT_SECRET_KEY']
-        key = {'k': base64url_encode(secret.encode('utf-8')), 'kty': 'oct'}
+        key = secret if secret else settings.JWT_AUTH['JWT_SECRET_KEY']
+        keys.add({'key': key, 'kty': 'oct'})
         algorithm = settings.JWT_AUTH['JWT_ALGORITHM']
 
-    jwk = PyJWK(key, algorithm)
-    return jwt.encode(payload, jwk.key, algorithm=algorithm)
-
-
-def _get_updated_scopes(scopes, grant_type):
-    """
-    Default scopes should only contain non-privileged data.
-    Do not be misled by the fact that `email` and `profile` are default scopes.
-    They were included for legacy compatibility, even though they contain privileged
-    data. The scope `user_id` must be added for requests with grant_type password.
-    """
-    scopes = scopes or ['email', 'profile']
-
-    if grant_type == Application.GRANT_PASSWORD and 'user_id' not in scopes:
-        scopes.append('user_id')
-    return scopes
+    data = json.dumps(payload)
+    jws = JWS(data, alg=algorithm)
+    return jws.sign_compact(keys=keys)

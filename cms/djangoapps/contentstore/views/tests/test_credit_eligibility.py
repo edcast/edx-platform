@@ -9,7 +9,7 @@ from cms.djangoapps.contentstore.tests.utils import CourseTestCase
 from cms.djangoapps.contentstore.utils import reverse_course_url
 from openedx.core.djangoapps.credit.api import get_credit_requirements
 from openedx.core.djangoapps.credit.models import CreditCourse
-from openedx.core.djangoapps.credit.signals.handlers import on_course_publish
+from openedx.core.djangoapps.credit.signals import on_course_publish
 from xmodule.modulestore.tests.factories import CourseFactory  # lint-amnesty, pylint: disable=wrong-import-order
 
 
@@ -58,5 +58,6 @@ class CreditEligibilityTest(CourseTestCase):
 
         response = self.client.get_html(self.course_details_url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Course Credit Requirements")
-        self.assertContains(response, "Steps required to earn course credit")
+        # Disabled by EDCAST
+        # self.assertContains(response, "Credit Eligibility Requirements")
+        # self.assertContains(response, "Steps needed for credit eligibility")

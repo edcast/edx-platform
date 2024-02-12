@@ -9,19 +9,17 @@ from datetime import datetime
 from functools import reduce
 
 import pytz
-from edx_toggles.toggles import WaffleSwitch
 from lxml import etree
-from openedx_filters.learning.filters import VerticalBlockChildRenderStarted, VerticalBlockRenderCompleted
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock  # lint-amnesty, pylint: disable=wrong-import-order
 from xblock.fields import Boolean, Scope
-
+from openedx_filters.learning.filters import VerticalBlockChildRenderStarted, VerticalBlockRenderCompleted
 from xmodule.mako_block import MakoTemplateBlockBase
 from xmodule.progress import Progress
 from xmodule.seq_block import SequenceFields
 from xmodule.studio_editable import StudioEditableBlock
-from xmodule.util.builtin_assets import add_webpack_js_to_fragment
 from xmodule.util.misc import is_xblock_an_assignment
+from xmodule.util.xmodule_django import add_webpack_to_fragment
 from xmodule.x_module import PUBLIC_VIEW, STUDENT_VIEW, XModuleFields
 from xmodule.xml_block import XmlMixin
 
@@ -34,17 +32,6 @@ _ = lambda text: text
 # HACK: This shouldn't be hard-coded to two types
 # OBSOLETE: This obsoletes 'type'
 CLASS_PRIORITY = ['video', 'problem']
-WAFFLE_NAMESPACE = 'xblocks'
-# .. toggle_name: xblocks.xblock_skill_tag_verification'
-# .. toggle_implementation: WaffleSwitch
-# .. toggle_default: False
-# .. toggle_description: Set to True to get learner verification of the skills associated with the xblock.
-# .. toggle_use_cases: open_edx
-# .. toggle_creation_date: 2023-10-04
-# .. toggle_target_removal_date: None
-XBLOCK_SKILL_TAG_VERIFICATION_SWITCH = WaffleSwitch(  # lint-amnesty, pylint: disable=toggle-missing-annotation
-    f'{WAFFLE_NAMESPACE}.xblock_skill_tag_verification', __name__
-)
 
 
 class VerticalFields:
@@ -129,16 +116,16 @@ class VerticalBlock(
                 child_block_context['wrap_xblock_data'] = {
                     'mark-completed-on-view-after-delay': complete_on_view_delay
                 }
-            if XBLOCK_SKILL_TAG_VERIFICATION_SWITCH.is_enabled():
-                try:
-                    # .. filter_implemented_name: VerticalBlockChildRenderStarted
-                    # .. filter_type: org.openedx.learning.vertical_block_child.render.started.v1
-                    child, child_block_context = VerticalBlockChildRenderStarted.run_filter(
-                        block=child, context=child_block_context
-                    )
-                except VerticalBlockChildRenderStarted.PreventChildBlockRender as exc:
-                    log.info("Skipping %s from vertical block. Reason: %s", child, exc.message)
-                    continue
+
+            try:
+                # .. filter_implemented_name: VerticalBlockChildRenderStarted
+                # .. filter_type: org.openedx.learning.vertical_block_child.render.started.v1
+                child, child_block_context = VerticalBlockChildRenderStarted.run_filter(
+                    block=child, context=child_block_context
+                )
+            except VerticalBlockChildRenderStarted.PreventChildBlockRender as exc:
+                log.info("Skipping %s from vertical block. Reason: %s", child, exc.message)
+                continue
 
             rendered_child = child.render(view, child_block_context)
             fragment.add_fragment_resources(rendered_child)
@@ -174,22 +161,20 @@ class VerticalBlock(
                     child_context['username'], str(self.location)),  # pylint: disable=no-member
             })
 
-        mako_service = self.runtime.service(self, 'mako')
-        fragment.add_content(mako_service.render_lms_template('vert_module.html', fragment_context))
+        fragment.add_content(self.runtime.service(self, 'mako').render_template('vert_module.html', fragment_context))
 
-        add_webpack_js_to_fragment(fragment, 'VerticalStudentView')
+        add_webpack_to_fragment(fragment, 'VerticalStudentView')
         fragment.initialize_js('VerticalStudentView')
 
-        if XBLOCK_SKILL_TAG_VERIFICATION_SWITCH.is_enabled():
-            try:
-                # .. filter_implemented_name: VerticalBlockRenderCompleted
-                # .. filter_type: org.openedx.learning.vertical_block.render.completed.v1
-                _, fragment, context, view = VerticalBlockRenderCompleted.run_filter(
-                    block=self, fragment=fragment, context=context, view=view
-                )
-            except VerticalBlockRenderCompleted.PreventVerticalBlockRender as exc:
-                log.info("VerticalBlock rendering stopped. Reason: %s", exc.message)
-                fragment.content = exc.message
+        try:
+            # .. filter_implemented_name: VerticalBlockRenderCompleted
+            # .. filter_type: org.openedx.learning.vertical_block.render.completed.v1
+            _, fragment, context, view = VerticalBlockRenderCompleted.run_filter(
+                block=self, fragment=fragment, context=context, view=view
+            )
+        except VerticalBlockRenderCompleted.PreventVerticalBlockRender as exc:
+            log.info("VerticalBlock rendering stopped. Reason: %s", exc.message)
+            fragment.content = exc.message
 
         return fragment
 

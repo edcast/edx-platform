@@ -2,7 +2,6 @@
 Open API support.
 """
 
-from django.conf import settings
 from edx_api_doc_tools import make_api_info
 from rest_framework import serializers
 
@@ -11,7 +10,7 @@ api_info = make_api_info(
     version="v1",
     description="APIs for access to Open edX information",
     #terms_of_service="https://www.google.com/policies/terms/",         # TODO: Do we have these?
-    email=settings.API_ACCESS_MANAGER_EMAIL,
+    email="oscm@edx.org",
     #license=openapi.License(name="BSD License"),                       # TODO: What does this mean?
 )
 

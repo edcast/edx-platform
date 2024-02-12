@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(undefined) {
     describe('VideoProgressSlider', function() {
         var state, oldOTBD;

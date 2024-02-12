@@ -4,6 +4,11 @@
 import copy
 import re
 import shutil
+import lxml.html
+from lxml import etree
+import ddt
+import hashlib
+import json
 from datetime import timedelta
 from functools import wraps
 from json import loads
@@ -40,17 +45,35 @@ from xmodule.modulestore.tests.django_utils import TEST_DATA_SPLIT_MODULESTORE
 from xmodule.modulestore.tests.factories import CourseFactory, BlockFactory, check_mongo_calls
 from xmodule.modulestore.xml_exporter import export_course_to_xml
 from xmodule.modulestore.xml_importer import import_course_from_xml, perform_xlint
+# <<<<<<< HEAD
+from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
+
+from xmodule.capa_module import CapaDescriptor
+from xmodule.course_module import CourseDescriptor, Textbook
+from xmodule.seq_module import SequenceDescriptor
+
+from contentstore.utils import delete_course_and_groups, reverse_url, reverse_course_url
+from django_comment_common.utils import are_permissions_roles_seeded
+
+from student import auth
+from student.models import CourseEnrollment
+from student.roles import CourseCreatorRole, CourseInstructorRole
+from opaque_keys import InvalidKeyError
+from contentstore.tests.utils import get_url
+from course_action_state.models import CourseRerunState, CourseRerunUIStateManager
+
+from course_action_state.managers import CourseActionStateItemNotFoundError
+from xmodule.contentstore.content import StaticContent
+from xmodule.modulestore.django import modulestore
+import yaml
+from courseware.access import has_access
+# =======
 from xmodule.seq_block import SequenceBlock
 from xmodule.video_block import VideoBlock
 
 from cms.djangoapps.contentstore.config import waffle
 from cms.djangoapps.contentstore.tests.utils import AjaxEnabledTestClient, CourseTestCase, get_url, parse_json
-from cms.djangoapps.contentstore.utils import (
-    delete_course,
-    reverse_course_url,
-    reverse_url,
-    get_taxonomy_tags_widget_url,
-)
+from cms.djangoapps.contentstore.utils import delete_course, reverse_course_url, reverse_url
 from cms.djangoapps.contentstore.views.component import ADVANCED_COMPONENT_TYPES
 from common.djangoapps.course_action_state.managers import CourseActionStateItemNotFoundError
 from common.djangoapps.course_action_state.models import CourseRerunState, CourseRerunUIStateManager
@@ -59,6 +82,7 @@ from common.djangoapps.student.models import CourseEnrollment
 from common.djangoapps.student.roles import CourseCreatorRole, CourseInstructorRole
 from openedx.core.djangoapps.django_comment_common.utils import are_permissions_roles_seeded
 from openedx.core.lib.tempdir import mkdtemp_clean
+# >>>>>>> open-release/palm.4
 
 TEST_DATA_CONTENTSTORE = copy.deepcopy(settings.CONTENTSTORE)
 TEST_DATA_CONTENTSTORE['DOC_STORE_CONFIG']['db'] = 'test_xcontent_%s' % uuid4().hex
@@ -1040,6 +1064,206 @@ class MiscCourseTests(ContentStoreTestCase):
             self.assertEqual(resp.status_code, 200)
 
 
+class CmCourseCreationTest(ModuleStoreTestCase):
+
+    def setUp(self):
+        data= yaml.compose("""
+            :app_id: 2
+            :lms_id: 1
+            :callback_url: https://www.cmappstage.com
+            :credentials: !ruby/array:Chef::Node::ImmutableArray
+            - !ruby/hash:Chef::Node::ImmutableMash
+              api_key: testapi
+              shared_secret: 123456789
+            :aws_access_key_id: abcdef
+            :aws_secret_access_key: testaws
+            :environment: development
+            """)
+        with open('/edx/app/edxapp/test_meta_data.yml', 'w') as outfile:
+            yaml.serialize(data,stream=outfile)
+        self.outfile = outfile
+        self.shared_secret = '123456789'
+        self.client = AjaxEnabledTestClient()
+        self.course_creation_options = {'org':'Stanford', \
+                'number':'cs224n', \
+                'run':'fall2015', \
+                'display_name':'Natural Language Processing', \
+                'email':'user@email.com', \
+                'format':'json'}
+        self.additional_options = {
+            'email':'user@email.com',
+            'start_date' : '2013-01-01 10:00 UTC',
+            'end_date':'2013-01-01 11:00 UTC',
+            'overview':'overview',
+            'syllabus':'syllabus',
+            'effort':'effort',
+            'short_description':'short_description'}
+
+        self.start_date_options = {
+            'email':'user@email.com',
+            'start_date' : '2013-01-03 10:00 UTC'
+            }
+
+        self.end_date_options = {
+            'email':'user@email.com',
+            'end_date' : '2013-01-15 11:00 UTC'
+            }
+        self.user = User.objects.create_user(username='uname', \
+                email='user@email.com', password = 'password') 
+        self.user.save()
+
+    def test_course_creation(self):
+        body = json.dumps(self.course_creation_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/', body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+
+        self.assertEqual(response.status_code, 200)
+        data = parse_json(response)
+        store = modulestore()
+        with store.default_store('split'):
+            destination_course_key = store.make_course_key('Stanford', 'cs224n', 'fall2015')
+        self.assertEqual(data['id'], str(destination_course_key))
+        self.assertTrue(has_access(self.user, 'staff', destination_course_key))
+
+    def test_course_creation_with_dates(self):
+        options = dict(self.course_creation_options.items() 
+            + self.additional_options.items())
+        body = json.dumps(options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/', body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+
+        self.assertEqual(response.status_code, 200)
+        self.assert_course_metadata()
+
+    def assert_course_metadata(self):
+        store = modulestore()
+        with store.default_store('split'):
+            location = store.make_course_key('Stanford', 'cs224n', 'fall2015')
+        course = modulestore().get_course(location)
+        self.assertEqual(course.start.strftime('%Y-%m-%d %H:%M %Z'), 
+            self.additional_options['start_date'])
+        self.assertEqual(course.end.strftime('%Y-%m-%d %H:%M %Z'), 
+            self.additional_options['end_date'])
+        
+    def test_course_update(self):
+        body = json.dumps(self.course_creation_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        self.client.ajax_post('/cm/course/',  body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        store = modulestore()
+        with store.default_store('split'):
+            location = store.make_course_key('Stanford', 'cs224n', 'fall2015')
+        body = json.dumps(self.additional_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/'+str(location),
+            body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+
+        self.assertEqual(response.status_code, 200)
+        self.assert_course_metadata()
+
+    #Updating the start date should not remove the end date value
+    def test_course_start_date_update(self):
+        body = json.dumps(self.course_creation_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        self.client.ajax_post('/cm/course/', body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        store = modulestore()
+        with store.default_store('split'):
+            location = store.make_course_key('Stanford', 'cs224n', 'fall2015')
+        body = json.dumps(self.additional_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/'+str(location),
+            body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        self.assertEqual(response.status_code, 200)
+        self.assert_course_metadata()
+        body = json.dumps(self.start_date_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/'+str(location),
+            body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        self.assertEqual(response.status_code, 200)
+        course = modulestore().get_course(location)
+        self.assertEqual(course.start.strftime('%Y-%m-%d %H:%M %Z'),
+            self.start_date_options['start_date'])
+        self.assertEqual(course.end.strftime('%Y-%m-%d %H:%M %Z'),
+            self.additional_options['end_date'])
+
+    #Updating the end date should not remove the start date value
+    def test_course_end_date_update(self):
+        body = json.dumps(self.course_creation_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        self.client.ajax_post('/cm/course/',body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        store = modulestore()
+        with store.default_store('split'):
+            location = store.make_course_key('Stanford', 'cs224n', 'fall2015')
+        body = json.dumps(self.additional_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/'+str(location),
+            body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        self.assertEqual(response.status_code, 200)
+        self.assert_course_metadata()
+        body = json.dumps(self.end_date_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/'+str(location),
+            body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        self.assertEqual(response.status_code, 200)
+        course = modulestore().get_course(location)
+        self.assertEqual(course.start.strftime('%Y-%m-%d %H:%M %Z'),
+            self.additional_options['start_date'])
+        self.assertEqual(course.end.strftime('%Y-%m-%d %H:%M %Z'),
+            self.end_date_options['end_date'])
+
+
+    def test_course_update_bad_id(self):
+        body = json.dumps(self.additional_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        store = modulestore()
+        with store.default_store('split'):
+            location = store.make_course_key('Harvard', 'cs224n', 'fall2015')
+        response = self.client.ajax_post('/cm/course/'+str(location),
+            body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        self.assertEqual(response.status_code, 400)
+
+    def test_duplicate_course_error(self):
+        body = json.dumps(self.course_creation_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        self.client.ajax_post('/cm/course/', body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        response = self.client.ajax_post('/cm/course/', body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        store = modulestore()
+        with store.default_store('split'):
+            location = store.make_course_key('Stanford', 'cs224n', 'fall2015')
+        self.assertEqual(response.status_code, 200)
+        data = parse_json(response)
+        self.assertIn('id', data)
+        # self.assertEqual(data['id'], 'Stanford/cs224n/fall2015')
+        self.assertEqual(data['id'], str(location))
+
+    def test_bad_params_course_error(self):
+        body = json.dumps({ \
+            'org':'Stanford', 'run':'fall2015', 'email':'user@email.com'})
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/', \
+            body,HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+
+        data = parse_json(response)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('errors', data)
+        self.assertIn('Bad Request', data['errors'])
+
+    def test_cm_secret_token_not_present(self):
+        body = json.dumps({'display_name':'stanfordcs224nfall2015', 'number':'cs224n', \
+            'org':'Stanford', 'run':'fall2015', 'email':'user@email.com'})
+        response = self.client.ajax_post('/cm/course/', \
+            body)
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_bad_user_email(self):
+        self.course_creation_options['email'] = 'bademail@baddomain.com'
+        body = json.dumps(self.course_creation_options)
+        token = hashlib.sha256(self.shared_secret + "|" + body)
+        response = self.client.ajax_post('/cm/course/',
+            body, HTTP_X_SAVANNAH_TOKEN = token.hexdigest())
+        self.assertEqual(response.status_code, 400)
+            
+
 @ddt.ddt
 class ContentStoreTest(ContentStoreTestCase):
     """
@@ -1084,36 +1308,6 @@ class ContentStoreTest(ContentStoreTestCase):
     def test_create_course(self):
         """Test new course creation - happy path"""
         self.assert_created_course()
-
-    @ddt.data(True, False)
-    @mock.patch(
-        'cms.djangoapps.contentstore.views.course.default_enable_flexible_peer_openassessments'
-    )
-    def test_create_course__default_enable_flexible_peer_openassessments(
-        self,
-        mock_toggle_state,
-        mock_default_enable_flexible_peer_openassessments
-    ):
-        """
-        Test that flex peer grading is forced on, when enabled
-        """
-        # Given a new course run
-        test_course_data = {}
-        test_course_data.update(self.course_data)
-        course_key = _get_course_id(self.store, test_course_data)
-
-        # ... with org configured to / not to enable flex grading
-        mock_default_enable_flexible_peer_openassessments.return_value = mock_toggle_state
-
-        # When I create a new course
-        new_course_data = _create_course(self, course_key, test_course_data)
-
-        # Then the process completes successfully
-        new_course_key = CourseKey.from_string(new_course_data['course_key'])
-        new_course = self.store.get_course(new_course_key)
-
-        # ... and our setting got toggled appropriately on the course
-        self.assertEqual(new_course.force_on_flexible_peer_openassessments, mock_toggle_state)
 
     @override_settings(DEFAULT_COURSE_LANGUAGE='hr')
     def test_create_course_default_language(self):
@@ -1411,20 +1605,11 @@ class ContentStoreTest(ContentStoreTestCase):
             self.assertEqual(resp.status_code, 404)
             return
 
-        assets_url = reverse_course_url(
-            'assets_handler',
-            course.location.course_key
-        )
-
-        taxonomy_tags_widget_url = get_taxonomy_tags_widget_url(course.id)
-
         self.assertContains(
             resp,
-            '<article class="outline outline-complex outline-course" data-locator="{locator}" data-course-key="{course_key}" data-course-assets="{assets_url}" data-taxonomy-tags-widget-url="{taxonomy_tags_widget_url}" >'.format(  # lint-amnesty, pylint: disable=line-too-long
+            '<article class="outline outline-complex outline-course" data-locator="{locator}" data-course-key="{course_key}">'.format(  # lint-amnesty, pylint: disable=line-too-long
                 locator=str(course.location),
                 course_key=str(course.id),
-                assets_url=assets_url,
-                taxonomy_tags_widget_url=taxonomy_tags_widget_url,
             ),
             status_code=200,
             html=True
@@ -1757,17 +1942,17 @@ class MetadataSaveTestCase(ContentStoreTestCase):
         """
         video_data = VideoBlock.parse_video_xml(video_sample_xml)
         video_data.pop('source')
-        self.video_block = BlockFactory.create(
+        self.video_descriptor = BlockFactory.create(
             parent_location=course.location, category='video',
             **video_data
         )
 
     def test_metadata_not_persistence(self):
         """
-        Test that blocks which set metadata fields in their
+        Test that descriptors which set metadata fields in their
         constructor are correctly deleted.
         """
-        self.assertIn('html5_sources', own_metadata(self.video_block))
+        self.assertIn('html5_sources', own_metadata(self.video_descriptor))
         attrs_to_strip = {
             'show_captions',
             'youtube_id_1_0',
@@ -1780,13 +1965,13 @@ class MetadataSaveTestCase(ContentStoreTestCase):
             'track'
         }
 
-        location = self.video_block.location
+        location = self.video_descriptor.location
 
         for field_name in attrs_to_strip:
-            delattr(self.video_block, field_name)
+            delattr(self.video_descriptor, field_name)
 
-        self.assertNotIn('html5_sources', own_metadata(self.video_block))
-        self.store.update_item(self.video_block, self.user.id)
+        self.assertNotIn('html5_sources', own_metadata(self.video_descriptor))
+        self.store.update_item(self.video_descriptor, self.user.id)
         block = self.store.get_item(location)
 
         self.assertNotIn('html5_sources', own_metadata(block))
@@ -2091,12 +2276,12 @@ class ContentLicenseTest(ContentStoreTestCase):
     def test_video_license_export(self):
         content_store = contentstore()
         root_dir = path(mkdtemp_clean())
-        video_block = BlockFactory.create(
+        video_descriptor = BlockFactory.create(
             parent_location=self.course.location, category='video',
             license="all-rights-reserved"
         )
         export_course_to_xml(self.store, content_store, self.course.id, root_dir, 'test_license')
-        fname = f"{video_block.scope_ids.usage_id.block_id}.xml"
+        fname = f"{video_descriptor.scope_ids.usage_id.block_id}.xml"
         video_file_path = root_dir / "test_license" / "video" / fname
         with video_file_path.open() as f:
             video_xml = etree.parse(f)
@@ -2148,8 +2333,6 @@ class EntryPageTestCase(TestCase):
 def _create_course(test, course_key, course_data):
     """
     Creates a course via an AJAX request and verifies the URL returned in the response.
-
-    Returns the data of the POST response
     """
     course_url = get_url('course_handler', course_key, 'course_key_string')
     response = test.client.ajax_post(course_url, course_data)
@@ -2157,8 +2340,6 @@ def _create_course(test, course_key, course_data):
     data = parse_json(response)
     test.assertNotIn('ErrMsg', data)
     test.assertEqual(data['url'], course_url)
-
-    return data
 
 
 def _get_course_id(store, course_data):

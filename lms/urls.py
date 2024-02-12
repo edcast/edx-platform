@@ -164,7 +164,7 @@ urlpatterns = [
                              namespace='catalog')),
 
     # Update session view
-    path('lang_pref/update_language', lang_pref_views.update_language, name='update_language'),
+    path('lang_pref/session_language', lang_pref_views.update_session_language, name='session_language'),
 
     # Multiple course modes and identity verification
     path(
@@ -199,6 +199,12 @@ urlpatterns = [
     # Learner Home
     path('api/learner_home/', include('lms.djangoapps.learner_home.urls', namespace='learner_home')),
 
+    # Learner Recommendations
+    path(
+        'api/learner_recommendations/',
+        include('lms.djangoapps.learner_recommendations.urls', namespace='learner_recommendations')
+    ),
+
     path(
         'api/experiments/',
         include(
@@ -208,17 +214,20 @@ urlpatterns = [
     ),
     path('api/discounts/', include(('openedx.features.discounts.urls', 'openedx.features.discounts'),
                                    namespace='api_discounts')),
-
-    # Provide URLs where we can see the rendered error pages without having to force an error.
-    path('403', handler403, name='render_403'),
-    path('404', handler404, name='render_404'),
-    path('429', handler429, name='render_429'),
-    path('500', handler500, name='render_500'),
+    path('403', handler403),
+    path('404', handler404),
+    path('429', handler429),
+    path('500', handler500),
 ]
 
 if settings.FEATURES.get('ENABLE_MOBILE_REST_API'):
     urlpatterns += [
-        re_path(r'^api/mobile/(?P<api_version>v(3|2|1|0.5))/', include('lms.djangoapps.mobile_api.urls')),
+        re_path(r'^api/mobile/(?P<api_version>v(2|1|0.5))/', include('lms.djangoapps.mobile_api.urls')),
+    ]
+
+if settings.FEATURES.get('ENABLE_OPENBADGES'):
+    urlpatterns += [
+        path('api/badges/v1/', include(('lms.djangoapps.badges.api.urls', 'badges'), namespace='badges_api')),
     ]
 
 urlpatterns += [
@@ -743,16 +752,6 @@ urlpatterns += [
 
 urlpatterns += [
     re_path(
-        r'^courses/{}/courseware-search/enabled/$'.format(
-            settings.COURSE_ID_PATTERN,
-        ),
-        courseware_views.courseware_mfe_search_enabled,
-        name='courseware_search_enabled_view',
-    ),
-]
-
-urlpatterns += [
-    re_path(
         r'^courses/{}/lti_tab/(?P<provider_uuid>[^/]+)/$'.format(
             settings.COURSE_ID_PATTERN,
         ),
@@ -966,9 +965,21 @@ if settings.FEATURES.get('ENABLE_FINANCIAL_ASSISTANCE_FORM'):
             name='financial_assistance_v2'
         )
     ]
+# TODO Rupesh check to fix paths
+
+# urlpatterns += [
+#     path(r'cm/set_cookie/$', courseware_views.set_cookie),
+#     url(r'cm/healthcheck/$', courseware_views.healthcheck),
+# ]
+
+# Edcast custom URLs
+urlpatterns += [
+    path('api/', include('edcast.api_urls')),
+]
 
 # API docs.
 urlpatterns += make_docs_urls(api_info)
+
 
 # edx-drf-extensions csrf app
 urlpatterns += [
@@ -1030,6 +1041,12 @@ if getattr(settings, 'PROVIDER_STATES_URL', None):
         )
     ]
 
+# save_for_later API urls
+if settings.ENABLE_SAVE_FOR_LATER:
+    urlpatterns += [
+        path('', include('lms.djangoapps.save_for_later.urls')),
+    ]
+
 # Enhanced Staff Grader (ESG) URLs
 urlpatterns += [
     path('api/ora_staff_grader/', include('lms.djangoapps.ora_staff_grader.urls', 'ora-staff-grader')),
@@ -1045,6 +1062,5 @@ urlpatterns += [
     path('api/mfe_config/v1', include(('lms.djangoapps.mfe_config_api.urls', 'lms.djangoapps.mfe_config_api'), namespace='mfe_config_api'))
 ]
 
-urlpatterns += [
-    path('api/notifications/', include('openedx.core.djangoapps.notifications.urls')),
-]
+
+

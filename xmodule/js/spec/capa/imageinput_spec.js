@@ -5,7 +5,6 @@
  * ~ Donald Knuth
  */
 
-// eslint-disable-next-line no-shadow-restricted-names
 (function($, ImageInput, undefined) {
     describe('ImageInput', function() {
         var state;
@@ -80,10 +79,8 @@
             event = jQuery.Event(
                 'click',
                 {
-                    offsetX: undefined,
-                    offsetY: undefined,
-                    pageX: 35.3,
-                    pageY: 42.7
+                    offsetX: undefined, offsetY: undefined,
+                    pageX: 35.3, pageY: 42.7
                 }
             );
 

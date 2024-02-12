@@ -1,9 +1,20 @@
 """
 Performance tests for field overrides.
 """
+<<<<<<< HEAD
+import ddt
+import itertools
+import mock
+from nose.plugins.skip import SkipTest
+from unittest import skip
+from courseware.views.views import progress
+from courseware.field_overrides import OverrideFieldData
+from courseware.testutils import FieldOverrideTestMixin
+=======
 
 
 import itertools
+>>>>>>> open-release/palm.4
 from datetime import datetime
 from unittest import mock
 
@@ -36,7 +47,8 @@ from openedx.features.content_type_gating.models import ContentTypeGatingConfig
 
 QUERY_COUNT_TABLE_IGNORELIST = WAFFLE_TABLES
 
-
+@skip('We escape in EDCAST')
+@attr(shard=3)
 @mock.patch.dict(
     'django.conf.settings.FEATURES',
     {
@@ -234,7 +246,7 @@ class TestFieldOverrideSplitPerformance(FieldOverridePerformanceTestCase):
     __test__ = True
 
     # TODO: decrease query count as part of REVO-28
-    QUERY_COUNT = 32
+    QUERY_COUNT = 31
 
     TEST_DATA = {
         ('no_overrides', 1, True, False): (QUERY_COUNT, 2),

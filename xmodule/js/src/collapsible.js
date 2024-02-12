@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(undefined) {
     'use strict';
 
@@ -13,7 +12,6 @@
         toggleHint: toggleHint
     };
 
-    // eslint-disable-next-line no-useless-return
     return;
 
     // [function setCollapsibles]

@@ -19,7 +19,6 @@ from django.core.files import File
 from django.core.files.storage import FileSystemStorage
 from django.db import transaction
 from django.http import Http404, HttpResponse, HttpResponseNotFound, StreamingHttpResponse
-from django.shortcuts import redirect
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -41,8 +40,7 @@ from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disa
 
 from ..storage import course_import_export_storage
 from ..tasks import CourseExportTask, CourseImportTask, export_olx, import_olx
-from ..toggles import use_new_export_page, use_new_import_page
-from ..utils import reverse_course_url, reverse_library_url, get_export_url, get_import_url
+from ..utils import reverse_course_url, reverse_library_url
 
 __all__ = [
     'import_handler', 'import_status_handler',
@@ -91,9 +89,6 @@ def import_handler(request, course_key_string):
         else:
             return _write_chunk(request, courselike_key)
     elif request.method == 'GET':  # assume html
-
-        if use_new_import_page(courselike_key) and not library:
-            return redirect(get_import_url(courselike_key))
         status_url = reverse_course_url(
             "import_status_handler", courselike_key, kwargs={'filename': "fillerName"}
         )
@@ -315,8 +310,8 @@ def export_handler(request, course_key_string):
     course_key = CourseKey.from_string(course_key_string)
     if not has_course_author_access(request.user, course_key):
         raise PermissionDenied()
-    library = isinstance(course_key, LibraryLocator)
-    if library:
+
+    if isinstance(course_key, LibraryLocator):
         courselike_block = modulestore().get_library(course_key)
         context = {
             'context_library': courselike_block,
@@ -341,8 +336,6 @@ def export_handler(request, course_key_string):
         export_olx.delay(request.user.id, course_key_string, request.LANGUAGE_CODE)
         return JsonResponse({'ExportStatus': 1})
     elif 'text/html' in requested_format:
-        if use_new_export_page(course_key) and not library:
-            return redirect(get_export_url(course_key))
         return render_to_response('export.html', context)
     else:
         # Only HTML request format is supported (no JSON).

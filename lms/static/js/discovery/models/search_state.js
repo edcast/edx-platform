@@ -7,6 +7,7 @@
     ], function(_, Backbone, CourseDiscovery, Filters) {
         'use strict';
 
+
         return Backbone.Model.extend({
 
             page: 0,
@@ -50,7 +51,6 @@
             },
 
             sendQuery: function(data) {
-                // eslint-disable-next-line no-unused-expressions
                 this.jqhxr && this.jqhxr.abort();
                 this.jqhxr = this.discovery.fetch({
                     type: 'POST',

@@ -1,7 +1,5 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(define, undefined) {
     'use strict';
-
     define([
         'underscore', 'backbone', 'js/edxnotes/views/tab_item'
     ], function(_, Backbone, TabItemView) {

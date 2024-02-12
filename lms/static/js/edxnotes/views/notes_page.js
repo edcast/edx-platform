@@ -1,7 +1,5 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(define, undefined) {
     'use strict';
-
     define([
         'backbone', 'js/edxnotes/collections/tabs', 'js/edxnotes/views/tabs_list',
         'js/edxnotes/views/tabs/recent_activity', 'js/edxnotes/views/tabs/course_structure',

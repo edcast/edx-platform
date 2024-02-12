@@ -1,6 +1,5 @@
 (function(define) {
     'use strict';
-
     // VideoContextMenu module.
     define(
         'video/095_video_context_menu.js',
@@ -161,7 +160,6 @@
                 itemHandler: function(event) {
                     event.preventDefault();
                     var item = $(event.target).data('menu');
-                    // eslint-disable-next-line default-case
                     switch (event.type) {
                     case 'keydown':
                         this.keyDownHandler.call(this, event, item);
@@ -311,7 +309,6 @@
                     var KEY = $.ui.keyCode,
                         keyCode = event.keyCode;
 
-                    // eslint-disable-next-line default-case
                     switch (keyCode) {
                     case KEY.UP:
                         item.getPrev().focus();
@@ -445,7 +442,6 @@
                     var KEY = $.ui.keyCode,
                         keyCode = event.keyCode;
 
-                    // eslint-disable-next-line default-case
                     switch (keyCode) {
                     case KEY.LEFT:
                         this.close().focus();
@@ -549,7 +545,6 @@
 
                 itemHandler: function(event) {
                     event.preventDefault();
-                    // eslint-disable-next-line default-case
                     switch (event.type) {
                     case 'contextmenu':
                     case 'click':
@@ -569,7 +564,6 @@
                     var KEY = $.ui.keyCode,
                         keyCode = event.keyCode;
 
-                    // eslint-disable-next-line default-case
                     switch (keyCode) {
                     case KEY.RIGHT:
                         event.stopPropagation();
@@ -643,14 +637,11 @@
                             label: i18n.Speed,
                             items: _.map(state.speeds, function(speed) {
                                 var isSelected = parseFloat(speed) === state.speed;
-                                return {
-                                    label: speed + 'x', callback: speedCallback, speed: speed, isSelected: isSelected
-                                };
+                                return {label: speed + 'x', callback: speedCallback, speed: speed, isSelected: isSelected};
                             }),
                             initialize: function(menuitem) {
                                 state.el.on({
                                     speedchange: function(event, speed) {
-                                        // eslint-disable-next-line no-shadow
                                         var item = menuitem.getChildren().filter(function(item) {
                                             return item.options.speed === speed;
                                         })[0];
@@ -664,7 +655,6 @@
                         ]
                     };
 
-                // eslint-disable-next-line no-shadow
                 $.fn.contextmenu = function(container, options) {
                     return this.each(function() {
                         $(this).data('contextmenu', new Menu(options, this, container));

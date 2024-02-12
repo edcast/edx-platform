@@ -22,7 +22,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -32,7 +32,7 @@ jobs:
         sudo apt-get install libxmlsec1-dev pkg-config
 
     - name: Setup Node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
 
@@ -46,7 +46,7 @@ jobs:
 
     - name: Cache pip dependencies
       id: cache-dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v2
       with:
         path: ${{ steps.pip-cache-dir.outputs.dir }}
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements/edx/development.txt') }}
@@ -64,8 +64,8 @@ jobs:
 
     - name: Run Static Assets Check
       env:
-        LMS_CFG: lms/envs/minimal.yml
-        CMS_CFG: lms/envs/minimal.yml
+        LMS_CFG: lms/envs/bok_choy.yml
+        CMS_CFG: cms/envs/bok_choy.yml
 
       run: |
         paver update_assets lms

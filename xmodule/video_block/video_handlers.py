@@ -315,12 +315,6 @@ class VideoStudentViewHandlers:
         if dispatch.startswith('translation'):
             language = dispatch.replace('translation', '').strip('/')
 
-            # Because scrapers hit video blocks, verify that a user exists.
-            # use the _request attr to get the django request object.
-            if not request._request.user:  # pylint: disable=protected-access
-                log.info("Transcript: user must be logged or public view enabled to get transcript")
-                return Response(status=403)
-
             if not language:
                 log.info("Invalid /translation request: no language.")
                 return Response(status=400)
@@ -330,7 +324,6 @@ class VideoStudentViewHandlers:
                 return Response(status=404)
 
             if language != self.transcript_language:
-
                 self.transcript_language = language
 
             try:
@@ -480,6 +473,7 @@ class VideoStudioViewHandlers:
             `POST`:
                 Upload srt file. Check possibility of generation of proper sjson files.
                 For now, it works only for self.transcripts, not for `en`.
+                Do not update self.transcripts, as fields are updated on save in Studio.
             `GET:
                 Return filename from storage. SRT format is sent back on success. Filename should be in GET dict.
 
@@ -535,7 +529,6 @@ class VideoStudioViewHandlers:
                             'edx_video_id': edx_video_id,
                             'language_code': new_language_code
                         }
-                        self.transcripts[new_language_code] = f'{edx_video_id}-{new_language_code}.srt'
                         response = Response(json.dumps(payload), status=201)
                     except (TranscriptsGenerationException, UnicodeDecodeError):
                         response = Response(

@@ -39,6 +39,7 @@ from edx_django_utils import ip
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from openedx.core.djangoapps.util import legacy_ip
 from openedx.core.lib.request_utils import course_id_from_url
 
 from . import api as embargo_api
@@ -86,8 +87,12 @@ class EmbargoMiddleware(MiddlewareMixin):
             if pattern.match(request.path) is not None:
                 return None
 
-        safest_ip_address = ip.get_safest_client_ip(request)
-        all_ip_addresses = ip.get_all_client_ips(request)
+        if legacy_ip.USE_LEGACY_IP.is_enabled():
+            safest_ip_address = legacy_ip.get_legacy_ip(request)
+            all_ip_addresses = [safest_ip_address]
+        else:
+            safest_ip_address = ip.get_safest_client_ip(request)
+            all_ip_addresses = ip.get_all_client_ips(request)
 
         ip_filter = IPFilter.current()
 

@@ -41,8 +41,7 @@ def create_zendesk_ticket(
     Create a Zendesk ticket via API.
     """
     if tags:
-        # Remove duplicates from tags list.
-        # Pls note: only use tags for lists and sets, as the below will remove the value of a key/value dictionary.
+        # Remove duplicates from tags list
         tags = list(set(tags))
 
     data = {
@@ -61,8 +60,11 @@ def create_zendesk_ticket(
         }
     }
 
+    # Encode the data to create a JSON payload
+    payload = json.dumps(data)
+
     if not (settings.ZENDESK_URL and settings.ZENDESK_OAUTH_ACCESS_TOKEN):
-        log.error(_std_error_message("zendesk not configured", data))
+        log.error(_std_error_message("zendesk not configured", payload))
         return status.HTTP_503_SERVICE_UNAVAILABLE
 
     if group:
@@ -71,11 +73,8 @@ def create_zendesk_ticket(
             data['ticket']['group_id'] = group_id
         else:
             msg = f"Group ID not found for group {group}. Please update ZENDESK_GROUP_ID_MAPPING"
-            log.error(_std_error_message(msg, data))
+            log.error(_std_error_message(msg, payload))
             return status.HTTP_400_BAD_REQUEST
-
-    # Encode the data to create a JSON payload
-    payload = json.dumps(data)
 
     # Set the request parameters
     url = urljoin(settings.ZENDESK_URL, '/api/v2/tickets.json')

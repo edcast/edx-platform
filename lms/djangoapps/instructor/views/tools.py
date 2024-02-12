@@ -47,6 +47,25 @@ def handle_dashboard_error(view):
     return wrapper
 
 
+def bulk_email_is_enabled_for_course(course_id):
+    """
+    Staff can only send bulk email for a course if all the following conditions are true:
+    1. Bulk email feature flag is on.
+    2. It is a studio course.
+    3. Bulk email is enabled for the course.
+    EDCAST: ENABLE_INSTRUCTOR_EMAIL is changed to False
+    """
+
+    bulk_email_enabled_globally = (settings.FEATURES['ENABLE_INSTRUCTOR_EMAIL'] is False)
+    is_studio_course = (modulestore().get_modulestore_type(course_id) != ModuleStoreEnum.Type.xml)
+    bulk_email_enabled_for_course = CourseAuthorization.instructor_email_enabled(course_id)
+
+    if bulk_email_enabled_globally and is_studio_course and bulk_email_enabled_for_course:
+        return True
+
+    return False
+
+
 def strip_if_string(value):
     if isinstance(value, str):
         return value.strip()
@@ -256,17 +275,3 @@ def dump_student_extensions(course, student):
         "title": _("Due date extensions for {0} {1} ({2})").format(
             student.first_name, student.last_name, student.username),
         "data": data}
-
-
-def keep_field_private(query_features, field_name):
-    '''
-    Utility to remove a field from a list of field names requested of a report
-    Keeps the specified field_name private (excluded from report)
-    '''
-    if (query_features is None) or (field_name is None):
-        raise DashboardError("Missing private field specification")
-
-    try:
-        query_features.remove(field_name)
-    except ValueError:
-        pass

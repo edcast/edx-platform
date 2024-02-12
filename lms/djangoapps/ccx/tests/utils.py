@@ -68,7 +68,7 @@ class CcxTestCase(EmailTemplateTagMixin, SharedModuleStoreTestCase):
         """
         super().setUp()
         # Create instructor account
-        self.coach = UserFactory.create()
+        self.coach = UserFactory.create(password="test")
         # create an instance of modulestore
         self.mstore = modulestore()
 
@@ -76,7 +76,7 @@ class CcxTestCase(EmailTemplateTagMixin, SharedModuleStoreTestCase):
         """
         create staff user.
         """
-        staff = UserFactory.create()
+        staff = UserFactory.create(password="test")
         role = CourseStaffRole(self.course.id)
         role.add_users(staff)
 
@@ -86,7 +86,7 @@ class CcxTestCase(EmailTemplateTagMixin, SharedModuleStoreTestCase):
         """
         create instructor user.
         """
-        instructor = UserFactory.create()
+        instructor = UserFactory.create(password="test")
         role = CourseInstructorRole(self.course.id)
         role.add_users(instructor)
 

@@ -12,15 +12,13 @@ from web_fragments.fragment import Fragment
 from xblock.completable import XBlockCompletionMode
 from xblock.core import XBlock
 from xblock.fields import UNIQUE_ID, Scope, String
-from xblock.utils.resources import ResourceLoader
-from xblock.utils.studio_editable import StudioEditableXBlockMixin
+from xblockutils.resources import ResourceLoader
+from xblockutils.studio_editable import StudioEditableXBlockMixin
 
-from lms.djangoapps.discussion.django_comment_client.permissions import has_permission
 from openedx.core.djangoapps.discussions.models import DiscussionsConfiguration, Provider
 from openedx.core.djangolib.markup import HTML, Text
 from openedx.core.lib.xblock_utils import get_css_dependencies, get_js_dependencies
 from xmodule.xml_block import XmlMixin
-
 
 log = logging.getLogger(__name__)
 loader = ResourceLoader(__name__)  # pylint: disable=invalid-name
@@ -156,6 +154,9 @@ class DiscussionXBlock(XBlock, StudioEditableXBlockMixin, XmlMixin):  # lint-amn
         :param str permission: Permission
         :rtype: bool
         """
+        # normal import causes the xmodule_assets command to fail due to circular import - hence importing locally
+        from lms.djangoapps.discussion.django_comment_client.permissions import has_permission
+
         return has_permission(self.django_user, permission, self.course_key)
 
     def student_view(self, context=None):
@@ -190,6 +191,7 @@ class DiscussionXBlock(XBlock, StudioEditableXBlockMixin, XmlMixin):  # lint-amn
                     url='{}?{}'.format(reverse('register_user'), qs),
                 ),
             )
+
         if utils.is_discussion_enabled(self.course_key):
             context = {
                 'discussion_id': self.discussion_id,
@@ -204,7 +206,7 @@ class DiscussionXBlock(XBlock, StudioEditableXBlockMixin, XmlMixin):  # lint-amn
                 'login_msg': login_msg,
             }
             fragment.add_content(
-                self.runtime.service(self, 'mako').render_lms_template('discussion/_discussion_inline.html', context)
+                self.runtime.service(self, 'mako').render_template('discussion/_discussion_inline.html', context)
             )
 
         fragment.initialize_js('DiscussionInlineBlock')
@@ -216,8 +218,7 @@ class DiscussionXBlock(XBlock, StudioEditableXBlockMixin, XmlMixin):  # lint-amn
         Renders author view for Studio.
         """
         fragment = Fragment()
-        # For historic reasons, this template is in the LMS templates folder:
-        fragment.add_content(self.runtime.service(self, 'mako').render_lms_template(
+        fragment.add_content(self.runtime.service(self, 'mako').render_template(
             'discussion/_discussion_inline_studio.html',
             {
                 'discussion_id': self.discussion_id,

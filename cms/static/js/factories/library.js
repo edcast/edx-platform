@@ -9,7 +9,6 @@ import './base';
 import 'cms/js/main';
 import 'xblock/cms.runtime.v1';
 
-// eslint-disable-next-line no-unused-expressions
 'use strict';
 export default function LibraryFactory(componentTemplates, XBlockInfoJson, options) {
     var main_options = {
@@ -25,6 +24,6 @@ export default function LibraryFactory(componentTemplates, XBlockInfoJson, optio
         var view = new PagedContainerPage(_.extend(main_options, options));
         view.render();
     });
-}
+};
 
-export {LibraryFactory};
+export {LibraryFactory}

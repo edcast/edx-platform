@@ -18,13 +18,11 @@ define(['jquery', 'underscore', 'gettext', 'js/views/baseview', 'common/js/compo
     'edx-ui-toolkit/js/utils/string-utils', 'edx-ui-toolkit/js/utils/html-utils'],
 function($, _, gettext, BaseView, ViewUtils, XBlockViewUtils, XBlockStringFieldEditor, StringUtils, HtmlUtils) {
     'use strict';
-
     var XBlockOutlineView = BaseView.extend({
         // takes XBlockInfo as a model
 
         options: {
-            collapsedClass: 'is-collapsed',
-            canEdit: true, // If not specified, assume user has permission to make changes
+            collapsedClass: 'is-collapsed'
         },
 
         templateName: 'xblock-outline',
@@ -41,7 +39,6 @@ function($, _, gettext, BaseView, ViewUtils, XBlockViewUtils, XBlockStringFieldE
             this.parentView = this.options.parentView;
             this.renderedChildren = false;
             this.model.on('sync', this.onSync, this);
-            this.clipboardManager = this.options.clipboardManager; // May be undefined if not on the course outline page
         },
 
         render: function() {
@@ -112,9 +109,7 @@ function($, _, gettext, BaseView, ViewUtils, XBlockViewUtils, XBlockStringFieldE
                 includesChildren: this.shouldRenderChildren(),
                 hasExplicitStaffLock: this.model.get('has_explicit_staff_lock'),
                 staffOnlyMessage: this.model.get('staff_only_message'),
-                course: course,
-                enableCopyPasteUnits: this.model.get("enable_copy_paste_units"), // ENABLE_COPY_PASTE_UNITS waffle flag
-                useTaggingTaxonomyListPage: this.model.get("use_tagging_taxonomy_list_page"), // ENABLE_TAGGING_TAXONOMY_LIST_PAGE waffle flag
+                course: course
             };
         },
 
@@ -222,8 +217,7 @@ function($, _, gettext, BaseView, ViewUtils, XBlockViewUtils, XBlockStringFieldE
                 parentView: this,
                 initialState: this.initialState,
                 expandedLocators: this.expandedLocators,
-                template: this.template,
-                clipboardManager: this.clipboardManager,
+                template: this.template
             }, options));
         },
 

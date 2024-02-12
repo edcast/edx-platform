@@ -1,6 +1,5 @@
 (function(define) {
     'use strict';
-
     define('video/00_component.js', [],
         function() {
             /**
@@ -39,7 +38,6 @@
      */
             var Component = function() {
                 if ($.isFunction(this.initialize)) {
-                    // eslint-disable-next-line prefer-spread
                     return this.initialize.apply(this, arguments);
                 }
             };
@@ -55,7 +53,6 @@
                 var Parent = this,
                     Child = function() {
                         if ($.isFunction(this.initialize)) {
-                            // eslint-disable-next-line prefer-spread
                             return this.initialize.apply(this, arguments);
                         }
                     };

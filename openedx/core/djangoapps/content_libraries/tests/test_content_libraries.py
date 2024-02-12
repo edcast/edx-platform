@@ -2,26 +2,21 @@
 Tests for Blockstore-based Content Libraries
 """
 from uuid import UUID
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import ddt
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test.client import Client
+from django.test.utils import override_settings
 from organizations.models import Organization
 from rest_framework.test import APITestCase
 
-from opaque_keys.edx.locator import LibraryLocatorV2, LibraryUsageLocatorV2
-from openedx_events.content_authoring.data import ContentLibraryData, LibraryBlockData
-from openedx_events.content_authoring.signals import (
-    CONTENT_LIBRARY_CREATED,
-    CONTENT_LIBRARY_DELETED,
-    CONTENT_LIBRARY_UPDATED,
-    LIBRARY_BLOCK_CREATED,
-    LIBRARY_BLOCK_DELETED,
-    LIBRARY_BLOCK_UPDATED,
-)
+from openedx.core.djangoapps.content_libraries.libraries_index import LibraryBlockIndexer, ContentLibraryIndexer
 from openedx.core.djangoapps.content_libraries.tests.base import (
+    ContentLibrariesRestApiBlockstoreServiceTest,
     ContentLibrariesRestApiTest,
+    elasticsearch_test,
     URL_BLOCK_METADATA_URL,
     URL_BLOCK_RENDER_VIEW,
     URL_BLOCK_GET_HANDLER_URL,
@@ -57,6 +52,13 @@ class ContentLibrariesTestMixin:
     library slug and bundle UUID does not because it's assumed to be immutable
     and cached forever.
     """
+
+    def setUp(self):
+        super().setUp()
+        if settings.ENABLE_ELASTICSEARCH_FOR_TESTS:
+            ContentLibraryIndexer.remove_all_items()
+            LibraryBlockIndexer.remove_all_items()
+
     def test_library_crud(self):
         """
         Test Create, Read, Update, and Delete of a Content Library
@@ -199,83 +201,89 @@ class ContentLibrariesTestMixin:
             'slug': ['Enter a valid “slug” consisting of Unicode letters, numbers, underscores, or hyphens.'],
         }
 
+    @ddt.data(True, False)
     @patch("openedx.core.djangoapps.content_libraries.views.LibraryApiPagination.page_size", new=2)
-    def test_list_library(self):
+    def test_list_library(self, is_indexing_enabled):
         """
         Test the /libraries API and its pagination
         """
-        lib1 = self._create_library(slug="some-slug-1", title="Existing Library")
-        lib2 = self._create_library(slug="some-slug-2", title="Existing Library")
-        lib1['num_blocks'] = lib2['num_blocks'] = None
-        lib1['last_published'] = lib2['last_published'] = None
-        lib1['has_unpublished_changes'] = lib2['has_unpublished_changes'] = None
-        lib1['has_unpublished_deletes'] = lib2['has_unpublished_deletes'] = None
+        with override_settings(FEATURES={**settings.FEATURES, 'ENABLE_CONTENT_LIBRARY_INDEX': is_indexing_enabled}):
+            lib1 = self._create_library(slug="some-slug-1", title="Existing Library")
+            lib2 = self._create_library(slug="some-slug-2", title="Existing Library")
+            if not is_indexing_enabled:
+                lib1['num_blocks'] = lib2['num_blocks'] = None
+                lib1['last_published'] = lib2['last_published'] = None
+                lib1['has_unpublished_changes'] = lib2['has_unpublished_changes'] = None
+                lib1['has_unpublished_deletes'] = lib2['has_unpublished_deletes'] = None
 
-        result = self._list_libraries()
-        assert len(result) == 2
-        assert lib1 in result
-        assert lib2 in result
-        result = self._list_libraries({'pagination': 'true'})
-        assert len(result['results']) == 2
-        assert result['next'] is None
+            result = self._list_libraries()
+            assert len(result) == 2
+            assert lib1 in result
+            assert lib2 in result
+            result = self._list_libraries({'pagination': 'true'})
+            assert len(result['results']) == 2
+            assert result['next'] is None
 
-        # Create another library which causes number of libraries to exceed the page size
-        self._create_library(slug="some-slug-3", title="Existing Library")
-        # Verify that if `pagination` param isn't sent, API still honors the max page size.
-        # This is for maintaining compatibility with older non pagination-aware clients.
-        result = self._list_libraries()
-        assert len(result) == 2
+            # Create another library which causes number of libraries to exceed the page size
+            self._create_library(slug="some-slug-3", title="Existing Library")
+            # Verify that if `pagination` param isn't sent, API still honors the max page size.
+            # This is for maintaining compatibility with older non pagination-aware clients.
+            result = self._list_libraries()
+            assert len(result) == 2
 
-        # Pagination enabled:
-        # Verify total elements and valid 'next' in page 1
-        result = self._list_libraries({'pagination': 'true'})
-        assert len(result['results']) == 2
-        assert 'page=2' in result['next']
-        assert 'pagination=true' in result['next']
-        # Verify total elements and null 'next' in page 2
-        result = self._list_libraries({'pagination': 'true', 'page': '2'})
-        assert len(result['results']) == 1
-        assert result['next'] is None
+            # Pagination enabled:
+            # Verify total elements and valid 'next' in page 1
+            result = self._list_libraries({'pagination': 'true'})
+            assert len(result['results']) == 2
+            assert 'page=2' in result['next']
+            assert 'pagination=true' in result['next']
+            # Verify total elements and null 'next' in page 2
+            result = self._list_libraries({'pagination': 'true', 'page': '2'})
+            assert len(result['results']) == 1
+            assert result['next'] is None
 
-    def test_library_filters(self):
+    @ddt.data(True, False)
+    def test_library_filters(self, is_indexing_enabled):
         """
         Test the filters in the list libraries API
         """
-        self._create_library(
-            slug="test-lib-filter-1", title="Fob", description="Bar", library_type=VIDEO,
-        )
-        self._create_library(
-            slug="test-lib-filter-2", title="Library-Title-2", description="Bar-2",
-        )
-        self._create_library(
-            slug="l3", title="Library-Title-3", description="Description", library_type=VIDEO,
-        )
+        suffix = str(is_indexing_enabled)
+        with override_settings(FEATURES={**settings.FEATURES, 'ENABLE_CONTENT_LIBRARY_INDEX': is_indexing_enabled}):
+            self._create_library(
+                slug=f"test-lib-filter-{suffix}-1", title="Fob", description=f"Bar-{suffix}", library_type=VIDEO,
+            )
+            self._create_library(
+                slug=f"test-lib-filter-{suffix}-2", title=f"Library-Title-{suffix}-2", description=f"Bar-{suffix}-2",
+            )
+            self._create_library(
+                slug=f"l3{suffix}", title=f"Library-Title-{suffix}-3", description="Description", library_type=VIDEO,
+            )
 
-        Organization.objects.get_or_create(
-            short_name="org-test",
-            defaults={"name": "Content Libraries Tachyon Exploration & Survey Team"},
-        )
-        self._create_library(
-            slug="l4", title="Library-Title-4",
-            description="Library-Description", org='org-test',
-            library_type=VIDEO,
-        )
-        self._create_library(
-            slug="l5", title="Library-Title-5", description="Library-Description",
-            org='org-test',
-        )
+            Organization.objects.get_or_create(
+                short_name=f"org-test-{suffix}",
+                defaults={"name": "Content Libraries Tachyon Exploration & Survey Team"},
+            )
+            self._create_library(
+                slug=f"l4-{suffix}", title=f"Library-Title-{suffix}-4",
+                description="Library-Description", org=f'org-test-{suffix}',
+                library_type=VIDEO,
+            )
+            self._create_library(
+                slug="l5", title=f"Library-Title-{suffix}-5", description="Library-Description",
+                org=f'org-test-{suffix}',
+            )
 
-        assert len(self._list_libraries()) == 5
-        assert len(self._list_libraries({'org': 'org-test'})) == 2
-        assert len(self._list_libraries({'text_search': 'test-lib-filter'})) == 2
-        assert len(self._list_libraries({'text_search': 'test-lib-filter', 'type': VIDEO})) == 1
-        assert len(self._list_libraries({'text_search': 'library-title'})) == 4
-        assert len(self._list_libraries({'text_search': 'library-title', 'type': VIDEO})) == 2
-        assert len(self._list_libraries({'text_search': 'bar'})) == 2
-        assert len(self._list_libraries({'text_search': 'org-test'})) == 2
-        assert len(self._list_libraries({'org': 'org-test',
-                                         'text_search': 'library-title-4'})) == 1
-        assert len(self._list_libraries({'type': VIDEO})) == 3
+            assert len(self._list_libraries()) == 5
+            assert len(self._list_libraries({'org': f'org-test-{suffix}'})) == 2
+            assert len(self._list_libraries({'text_search': f'test-lib-filter-{suffix}'})) == 2
+            assert len(self._list_libraries({'text_search': f'test-lib-filter-{suffix}', 'type': VIDEO})) == 1
+            assert len(self._list_libraries({'text_search': f'library-title-{suffix}'})) == 4
+            assert len(self._list_libraries({'text_search': f'library-title-{suffix}', 'type': VIDEO})) == 2
+            assert len(self._list_libraries({'text_search': f'bar-{suffix}'})) == 2
+            assert len(self._list_libraries({'text_search': f'org-test-{suffix}'})) == 2
+            assert len(self._list_libraries({'org': f'org-test-{suffix}',
+                                             'text_search': f'library-title-{suffix}-4'})) == 1
+            assert len(self._list_libraries({'type': VIDEO})) == 3
 
     # General Content Library XBlock tests:
 
@@ -295,7 +303,7 @@ class ContentLibrariesTestMixin:
         block_data = self._add_block_to_library(lib_id, "problem", "problem1")
         self.assertDictContainsEntries(block_data, {
             "id": "lb:CL-TEST:testlib1:problem:problem1",
-            "display_name": "Blank Problem",
+            "display_name": "Blank Advanced Problem",
             "block_type": "problem",
             "has_unpublished_changes": True,
         })
@@ -422,61 +430,65 @@ class ContentLibrariesTestMixin:
         assert 'resources' in fragment
         assert 'Hello world!' in fragment['content']
 
+    @ddt.data(True, False)
     @patch("openedx.core.djangoapps.content_libraries.views.LibraryApiPagination.page_size", new=2)
-    def test_list_library_blocks(self):
+    def test_list_library_blocks(self, is_indexing_enabled):
         """
         Test the /libraries/{lib_key_str}/blocks API and its pagination
         """
-        lib = self._create_library(slug="list_blocks-slug", title="Library 1")
-        block1 = self._add_block_to_library(lib["id"], "problem", "problem1")
-        block2 = self._add_block_to_library(lib["id"], "unit", "unit1")
+        with override_settings(FEATURES={**settings.FEATURES, 'ENABLE_CONTENT_LIBRARY_INDEX': is_indexing_enabled}):
+            lib = self._create_library(slug="list_blocks-slug" + str(is_indexing_enabled), title="Library 1")
+            block1 = self._add_block_to_library(lib["id"], "problem", "problem1")
+            block2 = self._add_block_to_library(lib["id"], "unit", "unit1")
 
-        self._add_block_to_library(lib["id"], "problem", "problem2", parent_block=block2["id"])
+            self._add_block_to_library(lib["id"], "problem", "problem2", parent_block=block2["id"])
 
-        result = self._get_library_blocks(lib["id"])
-        assert len(result) == 2
-        assert block1 in result
+            result = self._get_library_blocks(lib["id"])
+            assert len(result) == 2
+            assert block1 in result
 
-        result = self._get_library_blocks(lib["id"], {'pagination': 'true'})
-        assert len(result['results']) == 2
-        assert result['next'] is None
+            result = self._get_library_blocks(lib["id"], {'pagination': 'true'})
+            assert len(result['results']) == 2
+            assert result['next'] is None
 
-        self._add_block_to_library(lib["id"], "problem", "problem3")
-        # Test pagination
-        result = self._get_library_blocks(lib["id"])
-        assert len(result) == 3
-        result = self._get_library_blocks(lib["id"], {'pagination': 'true'})
-        assert len(result['results']) == 2
-        assert 'page=2' in result['next']
-        assert 'pagination=true' in result['next']
-        result = self._get_library_blocks(lib["id"], {'pagination': 'true', 'page': '2'})
-        assert len(result['results']) == 1
-        assert result['next'] is None
+            self._add_block_to_library(lib["id"], "problem", "problem3")
+            # Test pagination
+            result = self._get_library_blocks(lib["id"])
+            assert len(result) == 3
+            result = self._get_library_blocks(lib["id"], {'pagination': 'true'})
+            assert len(result['results']) == 2
+            assert 'page=2' in result['next']
+            assert 'pagination=true' in result['next']
+            result = self._get_library_blocks(lib["id"], {'pagination': 'true', 'page': '2'})
+            assert len(result['results']) == 1
+            assert result['next'] is None
 
-    def test_library_blocks_filters(self):
+    @ddt.data(True, False)
+    def test_library_blocks_filters(self, is_indexing_enabled):
         """
         Test the filters in the list libraries API
         """
-        lib = self._create_library(slug="test-lib-blocks", title="Title")
-        block1 = self._add_block_to_library(lib["id"], "problem", "foo-bar")
-        self._add_block_to_library(lib["id"], "video", "vid-baz")
-        self._add_block_to_library(lib["id"], "html", "html-baz")
-        self._add_block_to_library(lib["id"], "problem", "foo-baz")
-        self._add_block_to_library(lib["id"], "problem", "bar-baz")
+        with override_settings(FEATURES={**settings.FEATURES, 'ENABLE_CONTENT_LIBRARY_INDEX': is_indexing_enabled}):
+            lib = self._create_library(slug="test-lib-blocks" + str(is_indexing_enabled), title="Title")
+            block1 = self._add_block_to_library(lib["id"], "problem", "foo-bar")
+            self._add_block_to_library(lib["id"], "video", "vid-baz")
+            self._add_block_to_library(lib["id"], "html", "html-baz")
+            self._add_block_to_library(lib["id"], "problem", "foo-baz")
+            self._add_block_to_library(lib["id"], "problem", "bar-baz")
 
-        self._set_library_block_olx(block1["id"], "<problem display_name=\"DisplayName\"></problem>")
+            self._set_library_block_olx(block1["id"], "<problem display_name=\"DisplayName\"></problem>")
 
-        assert len(self._get_library_blocks(lib['id'])) == 5
-        assert len(self._get_library_blocks(lib['id'], {'text_search': 'Foo'})) == 2
-        assert len(self._get_library_blocks(lib['id'], {'text_search': 'Display'})) == 1
-        assert len(self._get_library_blocks(lib['id'], {'text_search': 'Video'})) == 1
-        assert len(self._get_library_blocks(lib['id'], {'text_search': 'Foo', 'block_type': 'video'})) == 0
-        assert len(self._get_library_blocks(lib['id'], {'text_search': 'Baz', 'block_type': 'video'})) == 1
-        assert len(self._get_library_blocks(lib['id'], {'text_search': 'Baz', 'block_type': ['video', 'html']})) ==\
-            2
-        assert len(self._get_library_blocks(lib['id'], {'block_type': 'video'})) == 1
-        assert len(self._get_library_blocks(lib['id'], {'block_type': 'problem'})) == 3
-        assert len(self._get_library_blocks(lib['id'], {'block_type': 'squirrel'})) == 0
+            assert len(self._get_library_blocks(lib['id'])) == 5
+            assert len(self._get_library_blocks(lib['id'], {'text_search': 'Foo'})) == 2
+            assert len(self._get_library_blocks(lib['id'], {'text_search': 'Display'})) == 1
+            assert len(self._get_library_blocks(lib['id'], {'text_search': 'Video'})) == 1
+            assert len(self._get_library_blocks(lib['id'], {'text_search': 'Foo', 'block_type': 'video'})) == 0
+            assert len(self._get_library_blocks(lib['id'], {'text_search': 'Baz', 'block_type': 'video'})) == 1
+            assert len(self._get_library_blocks(lib['id'], {'text_search': 'Baz', 'block_type': ['video', 'html']})) ==\
+                   2
+            assert len(self._get_library_blocks(lib['id'], {'block_type': 'video'})) == 1
+            assert len(self._get_library_blocks(lib['id'], {'block_type': 'problem'})) == 3
+            assert len(self._get_library_blocks(lib['id'], {'block_type': 'squirrel'})) == 0
 
     @ddt.data(
         ('video-problem', VIDEO, 'problem', 400),
@@ -525,8 +537,8 @@ class ContentLibrariesTestMixin:
 
         # Check the resulting OLX of the unit:
         assert self._get_library_block_olx(unit_block['id']) ==\
-            '<unit xblock-family="xblock.v1">\n  <xblock-include definition="html/html1"/>\n' \
-            '  <xblock-include definition="problem/problem1"/>\n</unit>\n'
+               '<unit xblock-family="xblock.v1">\n  <xblock-include definition="html/html1"/>\n' \
+               '  <xblock-include definition="problem/problem1"/>\n</unit>\n'
 
         # The unit can see and render its children:
         fragment = self._render_block_view(unit_block["id"], "student_view")
@@ -920,296 +932,18 @@ class ContentLibrariesTestMixin:
         else:
             assert len(types) > 1
 
-    def test_content_library_create_event(self):
-        """
-        Check that CONTENT_LIBRARY_CREATED event is sent when a content library is created.
-        """
-        event_receiver = Mock()
-        CONTENT_LIBRARY_CREATED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_event_create", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-        library_key = LibraryLocatorV2.from_string(lib['id'])
 
-        event_receiver.assert_called_once()
-        self.assertDictContainsSubset(
-            {
-                "signal": CONTENT_LIBRARY_CREATED,
-                "sender": None,
-                "content_library": ContentLibraryData(
-                    library_key=library_key,
-                    update_blocks=False,
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
-
-    def test_content_library_update_event(self):
-        """
-        Check that CONTENT_LIBRARY_UPDATED event is sent when a content library is updated.
-        """
-        event_receiver = Mock()
-        CONTENT_LIBRARY_UPDATED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_event_update", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-
-        lib2 = self._update_library(lib["id"], title="New Title")
-        library_key = LibraryLocatorV2.from_string(lib2['id'])
-
-        event_receiver.assert_called_once()
-        self.assertDictContainsSubset(
-            {
-                "signal": CONTENT_LIBRARY_UPDATED,
-                "sender": None,
-                "content_library": ContentLibraryData(
-                    library_key=library_key,
-                    update_blocks=False,
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
-
-    def test_content_library_delete_event(self):
-        """
-        Check that CONTENT_LIBRARY_DELETED event is sent when a content library is deleted.
-        """
-        event_receiver = Mock()
-        CONTENT_LIBRARY_DELETED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_event_delete", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-        library_key = LibraryLocatorV2.from_string(lib['id'])
-
-        self._delete_library(lib["id"])
-
-        event_receiver.assert_called_once()
-        self.assertDictContainsSubset(
-            {
-                "signal": CONTENT_LIBRARY_DELETED,
-                "sender": None,
-                "content_library": ContentLibraryData(
-                    library_key=library_key,
-                    update_blocks=False,
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
-
-    def test_library_block_create_event(self):
-        """
-        Check that LIBRARY_BLOCK_CREATED event is sent when a library block is created.
-        """
-        event_receiver = Mock()
-        LIBRARY_BLOCK_CREATED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_block_event_create", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-        lib_id = lib["id"]
-        self._add_block_to_library(lib_id, "problem", "problem1")
-
-        library_key = LibraryLocatorV2.from_string(lib_id)
-        usage_key = LibraryUsageLocatorV2(
-            lib_key=library_key,
-            block_type="problem",
-            usage_id="problem1"
-        )
-
-        event_receiver.assert_called_once()
-        self.assertDictContainsSubset(
-            {
-                "signal": LIBRARY_BLOCK_CREATED,
-                "sender": None,
-                "library_block": LibraryBlockData(
-                    library_key=library_key,
-                    usage_key=usage_key
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
-
-    def test_library_block_olx_update_event(self):
-        """
-        Check that LIBRARY_BLOCK_CREATED event is sent when the OLX source is updated.
-        """
-        event_receiver = Mock()
-        LIBRARY_BLOCK_UPDATED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_block_event_olx_update", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-        lib_id = lib["id"]
-
-        library_key = LibraryLocatorV2.from_string(lib_id)
-
-        block = self._add_block_to_library(lib_id, "problem", "problem1")
-        block_id = block["id"]
-        usage_key = LibraryUsageLocatorV2(
-            lib_key=library_key,
-            block_type="problem",
-            usage_id="problem1"
-        )
-
-        new_olx = """
-        <problem display_name="New Multi Choice Question" max_attempts="5">
-            <multiplechoiceresponse>
-                <p>This is a normal capa problem with unicode 🔥. It has "maximum attempts" set to **5**.</p>
-                <label>Blockstore is designed to store.</label>
-                <choicegroup type="MultipleChoice">
-                    <choice correct="false">XBlock metadata only</choice>
-                    <choice correct="true">XBlock data/metadata and associated static asset files</choice>
-                    <choice correct="false">Static asset files for XBlocks and courseware</choice>
-                    <choice correct="false">XModule metadata only</choice>
-                </choicegroup>
-            </multiplechoiceresponse>
-        </problem>
-        """.strip()
-
-        self._set_library_block_olx(block_id, new_olx)
-
-        event_receiver.assert_called_once()
-        self.assertDictContainsSubset(
-            {
-                "signal": LIBRARY_BLOCK_UPDATED,
-                "sender": None,
-                "library_block": LibraryBlockData(
-                    library_key=library_key,
-                    usage_key=usage_key
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
-
-    def test_library_block_child_update_event(self):
-        """
-        Check that LIBRARY_BLOCK_CREATED event is sent when a child is created.
-        """
-        event_receiver = Mock()
-        LIBRARY_BLOCK_UPDATED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_block_event_child_update", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-        lib_id = lib["id"]
-
-        library_key = LibraryLocatorV2.from_string(lib_id)
-
-        parent_block = self._add_block_to_library(lib_id, "unit", "u1")
-        parent_block_id = parent_block["id"]
-
-        self._add_block_to_library(lib["id"], "problem", "problem1", parent_block=parent_block_id)
-
-        usage_key = LibraryUsageLocatorV2(
-            lib_key=library_key,
-            block_type="problem",
-            usage_id="problem1"
-        )
-
-        event_receiver.assert_called_once()
-        self.assertDictContainsSubset(
-            {
-                "signal": LIBRARY_BLOCK_UPDATED,
-                "sender": None,
-                "library_block": LibraryBlockData(
-                    library_key=library_key,
-                    usage_key=usage_key
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
-
-    def test_library_block_add_asset_update_event(self):
-        """
-        Check that LIBRARY_BLOCK_CREATED event is sent when a static asset is uploaded associated with the XBlock.
-        """
-        event_receiver = Mock()
-        LIBRARY_BLOCK_UPDATED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_block_event_add_asset_update", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-        lib_id = lib["id"]
-
-        library_key = LibraryLocatorV2.from_string(lib_id)
-
-        block = self._add_block_to_library(lib_id, "unit", "u1")
-        block_id = block["id"]
-        self._set_library_block_asset(block_id, "test.txt", b"data")
-
-        usage_key = LibraryUsageLocatorV2(
-            lib_key=library_key,
-            block_type="unit",
-            usage_id="u1"
-        )
-
-        event_receiver.assert_called_once()
-        self.assertDictContainsSubset(
-            {
-                "signal": LIBRARY_BLOCK_UPDATED,
-                "sender": None,
-                "library_block": LibraryBlockData(
-                    library_key=library_key,
-                    usage_key=usage_key
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
-
-    def test_library_block_del_asset_update_event(self):
-        """
-        Check that LIBRARY_BLOCK_CREATED event is sent when a static asset is removed from XBlock.
-        """
-        event_receiver = Mock()
-        LIBRARY_BLOCK_UPDATED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_block_event_del_asset_update", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-        lib_id = lib["id"]
-
-        library_key = LibraryLocatorV2.from_string(lib_id)
-
-        block = self._add_block_to_library(lib_id, "unit", "u1")
-        block_id = block["id"]
-        self._set_library_block_asset(block_id, "test.txt", b"data")
-
-        self._delete_library_block_asset(block_id, 'text.txt')
-
-        usage_key = LibraryUsageLocatorV2(
-            lib_key=library_key,
-            block_type="unit",
-            usage_id="u1"
-        )
-
-        event_receiver.assert_called()
-        self.assertDictContainsSubset(
-            {
-                "signal": LIBRARY_BLOCK_UPDATED,
-                "sender": None,
-                "library_block": LibraryBlockData(
-                    library_key=library_key,
-                    usage_key=usage_key
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
-
-    def test_library_block_delete_event(self):
-        """
-        Check that LIBRARY_BLOCK_DELETED event is sent when a content library is deleted.
-        """
-        event_receiver = Mock()
-        LIBRARY_BLOCK_DELETED.connect(event_receiver)
-        lib = self._create_library(slug="test_lib_block_event_delete", title="Event Test Library", description="Testing event in library")  # lint-amnesty, pylint: disable=line-too-long
-
-        lib_id = lib["id"]
-        library_key = LibraryLocatorV2.from_string(lib_id)
-
-        block = self._add_block_to_library(lib_id, "problem", "problem1")
-        block_id = block['id']
-
-        usage_key = LibraryUsageLocatorV2(
-            lib_key=library_key,
-            block_type="problem",
-            usage_id="problem1"
-        )
-
-        self._delete_library_block(block_id)
-
-        event_receiver.assert_called()
-        self.assertDictContainsSubset(
-            {
-                "signal": LIBRARY_BLOCK_DELETED,
-                "sender": None,
-                "library_block": LibraryBlockData(
-                    library_key=library_key,
-                    usage_key=usage_key
-                ),
-            },
-            event_receiver.call_args.kwargs
-        )
+@elasticsearch_test
+class ContentLibrariesBlockstoreServiceTest(
+    ContentLibrariesTestMixin,
+    ContentLibrariesRestApiBlockstoreServiceTest,
+):
+    """
+    General tests for Blockstore-based Content Libraries, using the standalone Blockstore service.
+    """
 
 
+@elasticsearch_test
 class ContentLibrariesTest(
     ContentLibrariesTestMixin,
     ContentLibrariesRestApiTest,

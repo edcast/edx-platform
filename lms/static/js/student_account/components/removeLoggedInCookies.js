@@ -1,7 +1,6 @@
 import cookie from 'js-cookie';
 
 const removeLoggedInCookies = () => {
-    // eslint-disable-next-line prefer-destructuring
     const hostname = window.location.hostname;
     const isLocalhost = hostname.indexOf('localhost') >= 0;
     const isStage = hostname.indexOf('stage') >= 0;

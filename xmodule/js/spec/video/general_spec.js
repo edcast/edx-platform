@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-shadow-restricted-names
 (function(undefined) {
     describe('Video', function() {
         afterEach(function() {
@@ -168,7 +167,6 @@
                 itFabrique(test.itDescription, test.data, test.expectData);
             });
 
-            // eslint-disable-next-line no-useless-return
             return;
 
             function itFabrique(itDescription, data, expectData) {

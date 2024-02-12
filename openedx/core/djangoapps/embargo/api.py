@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from common.djangoapps.student.auth import has_course_author_access
 from openedx.core import types
 from openedx.core.djangoapps.geoinfo.api import country_code_from_ip
+from openedx.core.djangoapps.util import legacy_ip
 
 from .models import CountryAccessRule, RestrictedCourse
 
@@ -48,7 +49,10 @@ def redirect_if_blocked(
         If blocked, a URL path to a page explaining why the user was blocked. Else None.
     """
     if settings.FEATURES.get('EMBARGO'):
-        client_ips = ip.get_all_client_ips(request)
+        if legacy_ip.USE_LEGACY_IP.is_enabled():
+            client_ips = [legacy_ip.get_legacy_ip(request)]
+        else:
+            client_ips = ip.get_all_client_ips(request)
         user = user or request.user
         is_blocked = not check_course_access(course_key, user=user, ip_addresses=client_ips, url=request.path)
         if is_blocked:

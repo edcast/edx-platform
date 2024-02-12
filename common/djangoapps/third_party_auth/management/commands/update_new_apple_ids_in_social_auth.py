@@ -23,6 +23,7 @@ class Command(BaseCommand):
         manage.py update_new_apple_ids_in_social_auth
     """
 
+    @transaction.atomic
     def handle(self, *args, **options):
         apple_user_ids_info = AppleMigrationUserIdInfo.objects.filter(
             ~Q(new_apple_id=''), new_apple_id__isnull=False
@@ -34,19 +35,10 @@ class Command(BaseCommand):
                 uid=apple_user_id_info.old_apple_id, provider=AppleIdAuth.name
             ).first()
             if user_social_auth:
-                with transaction.atomic():
-                    try:
-                        user_social_auth.uid = apple_user_id_info.new_apple_id
-                        user_social_auth.save()
-                        log.info(
-                            'Replaced Apple ID %s with %s',
-                            apple_user_id_info.old_apple_id,
-                            apple_user_id_info.new_apple_id
-                        )
-                    except Exception as e:  # pylint: disable=broad-except
-                        log.error(
-                            'An error occurred while replacing %s with %s. Error: %s',
-                            apple_user_id_info.old_apple_id,
-                            apple_user_id_info.new_apple_id,
-                            str(e)
-                        )
+                user_social_auth.uid = apple_user_id_info.new_apple_id
+                user_social_auth.save()
+                log.info(
+                    'Replaced Apple ID %s with %s',
+                    apple_user_id_info.old_apple_id,
+                    apple_user_id_info.new_apple_id
+                )

@@ -12,7 +12,6 @@
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
-        // eslint-disable-next-line global-require
         require(['jquery'], function($) {
             factory(root, $);
         });

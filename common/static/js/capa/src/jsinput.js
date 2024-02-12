@@ -6,7 +6,6 @@
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Same_origin_policy_for_JavaScript
  */
 
-// eslint-disable-next-line no-shadow-restricted-names
 var JSInput = (function($, undefined) {
     // Initialize js inputs on current page.
     // N.B.: No library assumptions about the iframe can be made (including,
@@ -20,6 +19,7 @@ var JSInput = (function($, undefined) {
 
     /*                      Utils                               */
 
+
     // Take a string and find the nested object that corresponds to it. E.g.:
     //    _deepKey(obj, "an.example") -> obj["an"]["example"]
     function _deepKey(obj, path) {
@@ -29,7 +29,9 @@ var JSInput = (function($, undefined) {
         return obj;
     }
 
+
     /*      END     Utils                                   */
+
 
     function jsinputConstructor(elem) {
         // Define an class that will be instantiated for each jsinput element
@@ -103,7 +105,6 @@ var JSInput = (function($, undefined) {
                             channel.call({
                                 method: 'getState',
                                 params: '',
-                                // eslint-disable-next-line no-shadow
                                 success: function(val) {
                                     state = decodeURI(val.toString());
                                     store = {
@@ -143,7 +144,7 @@ var JSInput = (function($, undefined) {
                     jsonValue = storedState;
                 }
 
-                if (typeof jsonValue === 'object') {
+                if (typeof(jsonValue) === 'object') {
                     stateValue = jsonValue.state;
                 } else {
                     stateValue = jsonValue;
@@ -161,7 +162,6 @@ var JSInput = (function($, undefined) {
             // 200 ms and 5 times are arbitrary but this has functioned with the
             // only application that has ever used JSInput, jsVGL. Something
             // more sturdy should be put in place.
-            // eslint-disable-next-line no-inner-declarations
             function whileloop(n) {
                 if (n > 0) {
                     try {

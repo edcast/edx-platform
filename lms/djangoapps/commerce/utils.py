@@ -14,11 +14,10 @@ from django.utils.translation import gettext as _
 from opaque_keys.edx.keys import CourseKey
 
 from common.djangoapps.course_modes.models import CourseMode
-from lms.djangoapps.commerce.waffle import should_redirect_to_commerce_coordinator_checkout
 from openedx.core.djangoapps.commerce.utils import (
     get_ecommerce_api_base_url,
     get_ecommerce_api_client,
-    is_commerce_service_configured
+    is_commerce_service_configured,
 )
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.djangoapps.theming import helpers as theming_helpers
@@ -44,7 +43,6 @@ def is_account_activation_requirement_disabled():
 
 class EcommerceService:
     """ Helper class for ecommerce service integration. """
-
     def __init__(self):
         self.config = CommerceConfiguration.current()
 
@@ -104,16 +102,6 @@ class EcommerceService:
             http://localhost:8002/basket/add/
         """
         return self.get_absolute_ecommerce_url(self.config.basket_checkout_page)
-
-    def get_add_to_basket_url(self):
-        """ Return the URL for the payment page based on the waffle switch.
-
-        Example:
-            http://localhost/enabled_service_api_path
-        """
-        if should_redirect_to_commerce_coordinator_checkout():
-            return urljoin(settings.COMMERCE_COORDINATOR_URL_ROOT, settings.COORDINATOR_CHECKOUT_REDIRECT_PATH)
-        return self.payment_page_url()
 
     def get_checkout_page_url(self, *skus, **kwargs):
         """ Construct the URL to the ecommerce checkout page and include products.

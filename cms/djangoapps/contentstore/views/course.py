@@ -1,10 +1,13 @@
 """
 Views related to operations on course objects
 """
+
+
 import copy
 import json
 import logging
 import random
+from contentstore.utils import delete_course_and_groups
 import re
 import string
 from collections import defaultdict
@@ -15,15 +18,17 @@ from ccx_keys.locator import CCXLocator
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
+from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_http_methods
 from edx_django_utils.monitoring import function_trace
 from edx_toggles.toggles import WaffleSwitch
+from milestones import api as milestones_api
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
 from opaque_keys.edx.locator import BlockUsageLocator
@@ -31,7 +36,6 @@ from organizations.api import add_organization_course, ensure_organization
 from organizations.exceptions import InvalidOrganizationException
 from rest_framework.exceptions import ValidationError
 
-from cms.djangoapps.contentstore.xblock_storage_handlers.view_handlers import create_xblock_info
 from cms.djangoapps.course_creators.views import add_user_with_status_unrequested, get_course_creator_status
 from cms.djangoapps.course_creators.models import CourseCreator
 from cms.djangoapps.models.settings.course_grading import CourseGradingModel
@@ -39,13 +43,13 @@ from cms.djangoapps.models.settings.course_metadata import CourseMetadata
 from cms.djangoapps.models.settings.encoder import CourseSettingsEncoder
 from common.djangoapps.course_action_state.managers import CourseActionStateItemNotFoundError
 from common.djangoapps.course_action_state.models import CourseRerunState, CourseRerunUIStateManager
+from common.djangoapps.course_modes.models import CourseMode
 from common.djangoapps.edxmako.shortcuts import render_to_response
 from common.djangoapps.student.auth import (
     has_course_author_access,
     has_studio_read_access,
     has_studio_write_access,
-    has_studio_advanced_settings_access,
-    is_content_creator,
+    has_studio_advanced_settings_access
 )
 from common.djangoapps.student.roles import (
     CourseInstructorRole,
@@ -54,23 +58,38 @@ from common.djangoapps.student.roles import (
     UserBasedRole,
     OrgStaffRole
 )
+from common.djangoapps.util.course import get_link_for_about_page
+from common.djangoapps.util.date_utils import get_default_time_display
 from common.djangoapps.util.json_request import JsonResponse, JsonResponseBadRequest, expect_json
+from common.djangoapps.util.milestones_helpers import (
+    is_prerequisite_courses_enabled,
+    is_valid_course_key,
+    remove_prerequisite_course,
+    set_prerequisite_courses,
+    get_namespace_choices,
+    generate_milestone_namespace
+)
 from common.djangoapps.util.string_utils import _has_non_ascii_characters
+from common.djangoapps.xblock_django.api import deprecated_xblocks
+from openedx.core import toggles as core_toggles
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
+from openedx.core.djangoapps.credit.api import get_credit_requirements, is_credit_course
 from openedx.core.djangoapps.credit.tasks import update_credit_course_requirements
 from openedx.core.djangoapps.models.course_details import CourseDetails
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.djangolib.js_utils import dump_js_escaped_json
 from openedx.core.lib.course_tabs import CourseTabPluginManager
+from openedx.core.lib.courses import course_image_url
 from openedx.features.content_type_gating.models import ContentTypeGatingConfig
 from openedx.features.content_type_gating.partitions import CONTENT_TYPE_GATING_SCHEME
+from openedx.features.course_experience.waffle import ENABLE_COURSE_ABOUT_SIDEBAR_HTML
 from organizations.models import Organization
 from xmodule.contentstore.content import StaticContent  # lint-amnesty, pylint: disable=wrong-import-order
-from xmodule.course_block import CourseBlock, CourseFields  # lint-amnesty, pylint: disable=wrong-import-order
+from xmodule.course_block import CourseBlock, DEFAULT_START_DATE, CourseFields  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.error_block import ErrorBlock  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.modulestore import EdxJSONEncoder  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
-from xmodule.modulestore.exceptions import DuplicateCourseError  # lint-amnesty, pylint: disable=wrong-import-order
+from xmodule.modulestore.exceptions import DuplicateCourseError, ItemNotFoundError  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.partitions.partitions import UserPartition  # lint-amnesty, pylint: disable=wrong-import-order
 from xmodule.tabs import CourseTab, CourseTabList, InvalidTabsException  # lint-amnesty, pylint: disable=wrong-import-order
 
@@ -84,41 +103,76 @@ from ..course_group_config import (
 from ..course_info_model import delete_course_update, get_course_updates, update_course_updates
 from ..courseware_index import CoursewareSearchIndexer, SearchIndexingError
 from ..tasks import rerun_course as rerun_course_task
-from ..toggles import (
-    default_enable_flexible_peer_openassessments,
-    use_new_course_outline_page,
-    use_new_home_page,
-    use_new_updates_page,
-    use_new_advanced_settings_page,
-    use_new_grading_page,
-    use_new_schedule_details_page
-)
+from ..toggles import split_library_view_on_dashboard
 from ..utils import (
     add_instructor,
-    get_course_settings,
-    get_course_grading,
-    get_home_context,
-    get_library_context,
-    get_course_index_context,
     get_lms_link_for_item,
     get_proctored_exam_settings_url,
-    get_course_outline_url,
-    get_studio_home_url,
-    get_updates_url,
-    get_advanced_settings_url,
-    get_grading_url,
-    get_schedule_details_url,
-    get_course_rerun_context,
     initialize_permissions,
     remove_all_instructors,
     reverse_course_url,
     reverse_library_url,
     reverse_url,
-    reverse_usage_url,
-    update_course_details,
-    update_course_discussions_settings,
+    reverse_usage_url
 )
+# <<<<<<< HEAD
+from contentstore.views.entrance_exam import (
+    create_entrance_exam,
+    delete_entrance_exam,
+    update_entrance_exam,
+)
+from course_action_state.managers import CourseActionStateItemNotFoundError
+from course_action_state.models import CourseRerunState, CourseRerunUIStateManager
+from course_creators.views import get_course_creator_status, add_user_with_status_unrequested
+from edxmako.shortcuts import render_to_response
+from models.settings.course_grading import CourseGradingModel
+from models.settings.course_metadata import CourseMetadata
+from models.settings.encoder import CourseSettingsEncoder
+from openedx.core.djangoapps.content.course_structures.api.v0 import api, errors
+from openedx.core.djangoapps.credit.api import is_credit_course, get_credit_requirements
+from openedx.core.djangoapps.credit.tasks import update_credit_course_requirements
+from openedx.core.djangoapps.models.course_details import CourseDetails
+from openedx.core.djangoapps.programs.models import ProgramsApiConfig
+from openedx.core.djangoapps.programs.utils import get_programs
+from openedx.core.djangoapps.self_paced.models import SelfPacedConfiguration
+from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
+from openedx.core.lib.course_tabs import CourseTabPluginManager
+from openedx.core.lib.courses import course_image_url
+from openedx.core.djangolib.js_utils import dump_js_escaped_json
+from student import auth
+from student.auth import has_course_author_access, has_studio_write_access, has_studio_read_access
+from student.roles import (
+    CourseInstructorRole, CourseStaffRole, CourseCreatorRole, GlobalStaff, UserBasedRole
+)
+from util.course import get_lms_link_for_about_page
+from cm_plugin.token import validate_token
+from django.contrib.auth.models import User
+from xmodule.fields import Date
+from util.date_utils import get_default_time_display
+from util.json_request import JsonResponse, JsonResponseBadRequest, expect_json
+from util.milestones_helpers import (
+    is_entrance_exams_enabled,
+    is_prerequisite_courses_enabled,
+    is_valid_course_key,
+    set_prerequisite_courses,
+)
+from util.organizations_helpers import (
+    add_organization_course,
+    get_organization_by_short_name,
+    organizations_enabled
+)
+# =======
 from .component import ADVANCED_COMPONENT_TYPES
+from .helpers import is_content_creator
+from .entrance_exam import create_entrance_exam, delete_entrance_exam, update_entrance_exam
+from .block import create_xblock_info
+from .library import (
+    LIBRARIES_ENABLED,
+    LIBRARY_AUTHORING_MICROFRONTEND_URL,
+    user_can_create_library,
+    should_redirect_to_library_authoring_mfe
+# >>>>>>> open-release/palm.4
+)
 
 log = logging.getLogger(__name__)
 User = get_user_model()
@@ -133,12 +187,16 @@ __all__ = ['course_info_handler', 'course_handler', 'course_listing',
            'course_notifications_handler',
            'textbooks_list_handler', 'textbooks_detail_handler',
            'group_configurations_list_handler', 'group_configurations_detail_handler',
-           'get_course_and_check_access']
+# <<<<<<< HEAD
+           'cm_course_handler']
+# =======
+        #    'get_course_and_check_access']
 
 WAFFLE_NAMESPACE = 'studio_home'
 ENABLE_GLOBAL_STAFF_OPTIMIZATION = WaffleSwitch(  # lint-amnesty, pylint: disable=toggle-missing-annotation
     f'{WAFFLE_NAMESPACE}.enable_global_staff_optimization', __name__
 )
+# >>>>>>> open-release/palm.4
 
 
 class AccessListFallback(Exception):
@@ -159,6 +217,41 @@ def get_course_and_check_access(course_key, user, depth=0):
     course_block = modulestore().get_course(course_key, depth=depth)
     return course_block
 
+
+@csrf_exempt
+@expect_json
+def cm_course_handler(request, course_id = None):
+    response_format = request.GET.get('format','html')
+    if response_format == 'json' or 'application/json' in request.META.get('HTTP/ACCEPT','application/json'):
+        if request.method == 'POST' or request.method == 'PUT' or request.method == 'PATCH':
+            if validate_token(request.body, request) == False:
+                log.error("access tried without token, %s", str(request.json))
+                return JsonResponse("{}", status = 403)
+            instructor_username = request.json.get('username')
+            try:
+                instructor = User.objects.get(username = instructor_username)
+                request.user = instructor
+            except User.DoesNotExist:
+                log.error("course creation attempted by unregistered user: %s", instructor_username)
+		return JsonResponse(json.dumps({ 'errors': 'course creation attempted by unregistered user' }), status = 400)
+            if course_id is None:
+                create_response = cm_create_new_course(request)
+                if create_response.status_code == 200:
+                    try:
+                        data = json.loads(create_response.content)
+                        cm_update_course(request, data['id'])
+                    except:
+                        log.error("Course creation failed. Rolling back.")
+                        delete_course_and_groups(data['id'], True)
+                        return JsonResponse("{}", status = 400)
+                return create_response
+            else:
+                log.debug("Updating course: %s", course_id)
+                return cm_update_course(request, course_id)
+        else:
+            return JsonResponse("{}", status = 404)
+    else:
+        return JsonResponse("{}", status = 404)
 
 def reindex_course_and_check_access(course_key, user):
     """
@@ -253,6 +346,98 @@ def _dismiss_notification(request, course_action_state_id):
     return JsonResponse({'success': True})
 
 
+
+def update_item(location, value):
+    """
+    If value is None, delete the db entry. Otherwise, update it using the correct modulestore.
+    """
+    if value is None:
+        modulestore().delete_item(location)
+    else:
+        modulestore().update_item(location, value)
+
+
+@expect_json
+def cm_update_course(request, course_id):
+    content = {}
+    status_code = 200
+
+    # This code is borrowed from models.settings.course_details
+    try:
+
+        course_key = CourseKey.from_string(course_id)
+        descriptor = modulestore().get_course(course_key)
+
+        dirty = False
+        date = Date()
+        jsondict = request.json
+        if 'start_date' in jsondict:
+            converted = date.from_json(jsondict['start_date'])
+        else:
+            converted = None
+        if converted is not None and converted != descriptor.start:
+            dirty = True
+            descriptor.start = converted
+            descriptor.enrollment_start = converted
+
+        if 'end_date' in jsondict:
+            converted = date.from_json(jsondict['end_date'])
+        else:
+            converted = None
+
+        if converted is not None and converted != descriptor.end:
+            dirty = True
+            descriptor.end = converted
+            descriptor.enrollment_end = converted
+
+        if 'course_image_name' in jsondict and jsondict['course_image_name'] != descriptor.course_image:
+            descriptor.course_image = jsondict['course_image_name']
+            dirty = True
+
+        if dirty:
+            descriptor.save()
+
+            modulestore().update_item(descriptor, request.user.id)
+
+        return JsonResponse("{}", status = status_code)
+    except Exception as e:
+        log.error("course updation failed with exception: %s", str(e))
+        return HttpResponseBadRequest()
+
+@expect_json
+def cm_create_new_course(request):
+    try:
+        if 'org' not in request.json:
+            return JsonResponse({'errors': 'Bad Request. Missing "org" param.'}, status=400)
+        if 'number' not in request.json:
+            return JsonResponse({'errors': 'Bad Request. Missing "number" param.'}, status=400)
+        if 'run' not in request.json:
+            return JsonResponse({'errors': 'Bad Request. Missing "run" param.'}, status = 400)
+
+        # Currently anyone who calls this can create
+        # a course
+        CourseCreatorRole().add_users(request.user)
+        response = _create_or_rerun_course(request)
+        response_body = json.loads(response.content)
+        store = modulestore()
+        with store.default_store('split'):
+            destination_course_key = store.make_course_key(request.json.get('org'),\
+                                           request.json.get('number'), \
+                                           request.json.get('run'))
+        course_id = str(destination_course_key)
+        # hacking to try and send the id as we need
+        if 'url' in response_body:
+            cm_update_course(request, course_id)
+
+        content = {'id': course_id}
+        status_code = 200
+
+    except Exception as e:
+        content = {'errors':str(e)}
+        status_code = 400
+    return JsonResponse(content, status = status_code)
+
+# pylint: disable=unused-argument
 @login_required
 def course_handler(request, course_key_string=None):
     """
@@ -326,8 +511,13 @@ def course_rerun_handler(request, course_key_string):
     with modulestore().bulk_operations(course_key):
         course_block = get_course_and_check_access(course_key, request.user, depth=3)
         if request.method == 'GET':
-            course_rerun_context = get_course_rerun_context(course_key, course_block, request.user)
-            return render_to_response('course-create-rerun.html', course_rerun_context)
+            return render_to_response('course-create-rerun.html', {
+                'source_course_key': course_key,
+                'display_name': course_block.display_name,
+                'user': request.user,
+                'course_creator_status': _get_course_creator_status(request.user),
+                'allow_unicode_course_id': settings.FEATURES.get('ALLOW_UNICODE_COURSE_ID', False)
+            })
 
 
 @login_required
@@ -535,11 +725,63 @@ def course_listing(request):
     """
     List all courses and libraries available to the logged in user
     """
-    if use_new_home_page():
-        return redirect(get_studio_home_url())
 
-    home_context = get_home_context(request)
-    return render_to_response('index.html', home_context)
+    optimization_enabled = GlobalStaff().has_user(request.user) and ENABLE_GLOBAL_STAFF_OPTIMIZATION.is_enabled()
+
+    org = request.GET.get('org', '') if optimization_enabled else None
+    courses_iter, in_process_course_actions = get_courses_accessible_to_user(request, org)
+    user = request.user
+    libraries = []
+    if not split_library_view_on_dashboard() and LIBRARIES_ENABLED:
+        libraries = _accessible_libraries_iter(request.user)
+
+    def format_in_process_course_view(uca):
+        """
+        Return a dict of the data which the view requires for each unsucceeded course
+        """
+        return {
+            'display_name': uca.display_name,
+            'course_key': str(uca.course_key),
+            'org': uca.course_key.org,
+            'number': uca.course_key.course,
+            'run': uca.course_key.run,
+            'is_failed': uca.state == CourseRerunUIStateManager.State.FAILED,
+            'is_in_progress': uca.state == CourseRerunUIStateManager.State.IN_PROGRESS,
+            'dismiss_link': reverse_course_url(
+                'course_notifications_handler',
+                uca.course_key,
+                kwargs={
+                    'action_state_id': uca.id,
+                },
+            ) if uca.state == CourseRerunUIStateManager.State.FAILED else ''
+        }
+
+    split_archived = settings.FEATURES.get('ENABLE_SEPARATE_ARCHIVED_COURSES', False)
+    active_courses, archived_courses = _process_courses_list(courses_iter, in_process_course_actions, split_archived)
+    in_process_course_actions = [format_in_process_course_view(uca) for uca in in_process_course_actions]
+
+    return render_to_response('index.html', {
+        'courses': active_courses,
+        'split_studio_home': split_library_view_on_dashboard(),
+        'archived_courses': archived_courses,
+        'in_process_course_actions': in_process_course_actions,
+        'libraries_enabled': LIBRARIES_ENABLED,
+        'redirect_to_library_authoring_mfe': should_redirect_to_library_authoring_mfe(),
+        'library_authoring_mfe_url': LIBRARY_AUTHORING_MICROFRONTEND_URL,
+        'libraries': [_format_library_for_view(lib, request) for lib in libraries],
+        'show_new_library_button': user_can_create_library(user) and not should_redirect_to_library_authoring_mfe(),
+        'user': user,
+        'request_course_creator_url': reverse('request_course_creator'),
+        'course_creator_status': _get_course_creator_status(user),
+        'rerun_creator_status': GlobalStaff().has_user(user),
+        'allow_unicode_course_id': settings.FEATURES.get('ALLOW_UNICODE_COURSE_ID', False),
+        'allow_course_reruns': settings.FEATURES.get('ALLOW_COURSE_RERUNS', True),
+        'optimization_enabled': optimization_enabled,
+        'active_tab': 'courses',
+        'allowed_organizations': get_allowed_organizations(user),
+        'allowed_organizations_for_libraries': get_allowed_organizations_for_libraries(user),
+        'can_create_organizations': user_can_create_organizations(user),
+    })
 
 
 @login_required
@@ -548,7 +790,26 @@ def library_listing(request):
     """
     List all Libraries available to the logged in user
     """
-    data = get_library_context(request)
+    libraries = _accessible_libraries_iter(request.user) if LIBRARIES_ENABLED else []
+    data = {
+        'in_process_course_actions': [],
+        'courses': [],
+        'libraries_enabled': LIBRARIES_ENABLED,
+        'libraries': [_format_library_for_view(lib, request) for lib in libraries],
+        'show_new_library_button': LIBRARIES_ENABLED and request.user.is_active,
+        'user': request.user,
+        'request_course_creator_url': reverse('request_course_creator'),
+        'course_creator_status': _get_course_creator_status(request.user),
+        'allow_unicode_course_id': settings.FEATURES.get('ALLOW_UNICODE_COURSE_ID', False),
+        'archived_courses': True,
+        'allow_course_reruns': settings.FEATURES.get('ALLOW_COURSE_RERUNS', True),
+        'rerun_creator_status': GlobalStaff().has_user(request.user),
+        'split_studio_home': split_library_view_on_dashboard(),
+        'active_tab': 'libraries',
+        'allowed_organizations': get_allowed_organizations(request.user),
+        'allowed_organizations_for_libraries': get_allowed_organizations_for_libraries(request.user),
+        'can_create_organizations': user_can_create_organizations(request.user),
+    }
     return render_to_response('index.html', data)
 
 
@@ -618,17 +879,70 @@ def course_index(request, course_key):
 
     org, course, name: Attributes of the Location for the item to edit
     """
-    if use_new_course_outline_page(course_key):
-        return redirect(get_course_outline_url(course_key))
+    # A depth of None implies the whole course. The course outline needs this in order to compute has_changes.
+    # A unit may not have a draft version, but one of its components could, and hence the unit itself has changes.
     with modulestore().bulk_operations(course_key):
-        # A depth of None implies the whole course. The course outline needs this in order to compute has_changes.
-        # A unit may not have a draft version, but one of its components could, and hence the unit itself has changes.
         course_block = get_course_and_check_access(course_key, request.user, depth=None)
         if not course_block:
             raise Http404
-        # should be under bulk_operations if course_block is passed
-        course_index_context = get_course_index_context(request, course_key, course_block)
-        return render_to_response('course_outline.html', course_index_context)
+        lms_link = get_lms_link_for_item(course_block.location)
+        reindex_link = None
+        if settings.FEATURES.get('ENABLE_COURSEWARE_INDEX', False):
+            if GlobalStaff().has_user(request.user):
+                reindex_link = f"/course/{str(course_key)}/search_reindex"
+        sections = course_block.get_children()
+        course_structure = _course_outline_json(request, course_block)
+        locator_to_show = request.GET.get('show', None)
+
+        course_release_date = (
+            get_default_time_display(course_block.start)
+            if course_block.start != DEFAULT_START_DATE
+            else _("Set Date")
+        )
+
+        settings_url = reverse_course_url('settings_handler', course_key)
+
+        try:
+            current_action = CourseRerunState.objects.find_first(course_key=course_key, should_display=True)
+        except (ItemNotFoundError, CourseActionStateItemNotFoundError):
+            current_action = None
+
+        deprecated_block_names = [block.name for block in deprecated_xblocks()]
+        deprecated_blocks_info = _deprecated_blocks_info(course_block, deprecated_block_names)
+
+        frontend_app_publisher_url = configuration_helpers.get_value_for_org(
+            course_block.location.org,
+            'FRONTEND_APP_PUBLISHER_URL',
+            settings.FEATURES.get('FRONTEND_APP_PUBLISHER_URL', False)
+        )
+        # gather any errors in the currently stored proctoring settings.
+        advanced_dict = CourseMetadata.fetch(course_block)
+        proctoring_errors = CourseMetadata.validate_proctoring_settings(course_block, advanced_dict, request.user)
+
+        return render_to_response('course_outline.html', {
+            'language_code': request.LANGUAGE_CODE,
+            'context_course': course_block,
+            'lms_link': lms_link,
+            'sections': sections,
+            'course_structure': course_structure,
+            'initial_state': course_outline_initial_state(locator_to_show, course_structure) if locator_to_show else None,  # lint-amnesty, pylint: disable=line-too-long
+            'rerun_notification_id': current_action.id if current_action else None,
+            'course_release_date': course_release_date,
+            'settings_url': settings_url,
+            'reindex_link': reindex_link,
+            'deprecated_blocks_info': deprecated_blocks_info,
+            'notification_dismiss_url': reverse_course_url(
+                'course_notifications_handler',
+                current_action.course_key,
+                kwargs={
+                    'action_state_id': current_action.id,
+                },
+            ) if current_action else None,
+            'frontend_app_publisher_url': frontend_app_publisher_url,
+            'mfe_proctored_exam_settings_url': get_proctored_exam_settings_url(course_block.id),
+            'advance_settings_url': reverse_course_url('advanced_settings_handler', course_block.id),
+            'proctoring_errors': proctoring_errors,
+        })
 
 
 @function_trace('get_courses_accessible_to_user')
@@ -854,13 +1168,6 @@ def create_new_course(user, org, number, run, fields):
     store_for_new_course = modulestore().default_modulestore.get_modulestore_type()
     new_course = create_new_course_in_store(store_for_new_course, user, org, number, run, fields)
     add_organization_course(org_data, new_course.id)
-    update_course_discussions_settings(new_course)
-
-    # Enable certain fields rolling forward, where configured
-    if default_enable_flexible_peer_openassessments(new_course.id):
-        new_course.force_on_flexible_peer_openassessments = True
-    modulestore().update_item(new_course, new_course.published_by)
-
     return new_course
 
 
@@ -924,10 +1231,6 @@ def rerun_course(user, source_course_key, org, number, run, fields, background=T
     fields['enrollment_end'] = None
     fields['video_upload_pipeline'] = {}
 
-    # Enable certain fields rolling forward, where configured
-    if default_enable_flexible_peer_openassessments(source_course_key):
-        fields['force_on_flexible_peer_openassessments'] = True
-
     json_fields = json.dumps(fields, cls=EdxJSONEncoder)
     args = [str(source_course_key), str(destination_course_key), user.id, json_fields]
 
@@ -956,8 +1259,6 @@ def course_info_handler(request, course_key_string):
         course_block = get_course_and_check_access(course_key, request.user)
         if not course_block:
             raise Http404
-        if use_new_updates_page(course_key):
-            return redirect(get_updates_url(course_key))
         if 'text/html' in request.META.get('HTTP_ACCEPT', 'text/html'):
             return render_to_response(
                 'course_info.html',
@@ -1038,13 +1339,96 @@ def settings_handler(request, course_key_string):  # lint-amnesty, pylint: disab
         json: update the Course and About xblocks through the CourseDetails model
     """
     course_key = CourseKey.from_string(course_key_string)
-
+    credit_eligibility_enabled = settings.FEATURES.get('ENABLE_CREDIT_ELIGIBILITY', False)
     with modulestore().bulk_operations(course_key):
         course_block = get_course_and_check_access(course_key, request.user)
         if 'text/html' in request.META.get('HTTP_ACCEPT', '') and request.method == 'GET':
-            if use_new_schedule_details_page(course_key):
-                return redirect(get_schedule_details_url(course_key))
-            settings_context = get_course_settings(request, course_key, course_block)
+            upload_asset_url = reverse_course_url('assets_handler', course_key)
+
+            # see if the ORG of this course can be attributed to a defined configuration . In that case, the
+            # course about page should be editable in Studio
+            publisher_enabled = configuration_helpers.get_value_for_org(
+                course_block.location.org,
+                'ENABLE_PUBLISHER',
+                settings.FEATURES.get('ENABLE_PUBLISHER', False)
+            )
+            marketing_enabled = configuration_helpers.get_value_for_org(
+                course_block.location.org,
+                'ENABLE_MKTG_SITE',
+                settings.FEATURES.get('ENABLE_MKTG_SITE', False)
+            )
+            enable_extended_course_details = configuration_helpers.get_value_for_org(
+                course_block.location.org,
+                'ENABLE_EXTENDED_COURSE_DETAILS',
+                settings.FEATURES.get('ENABLE_EXTENDED_COURSE_DETAILS', False)
+            )
+
+            about_page_editable = not publisher_enabled
+            enrollment_end_editable = GlobalStaff().has_user(request.user) or not publisher_enabled
+            short_description_editable = configuration_helpers.get_value_for_org(
+                course_block.location.org,
+                'EDITABLE_SHORT_DESCRIPTION',
+                settings.FEATURES.get('EDITABLE_SHORT_DESCRIPTION', True)
+            )
+            sidebar_html_enabled = ENABLE_COURSE_ABOUT_SIDEBAR_HTML.is_enabled()
+
+            verified_mode = CourseMode.verified_mode_for_course(course_key, include_expired=True)
+            upgrade_deadline = (verified_mode and verified_mode.expiration_datetime and
+                                verified_mode.expiration_datetime.isoformat())
+            settings_context = {
+                'context_course': course_block,
+                'course_locator': course_key,
+                'lms_link_for_about_page': get_link_for_about_page(course_block),
+                'course_image_url': course_image_url(course_block, 'course_image'),
+                'banner_image_url': course_image_url(course_block, 'banner_image'),
+                'video_thumbnail_image_url': course_image_url(course_block, 'video_thumbnail_image'),
+                'details_url': reverse_course_url('settings_handler', course_key),
+                'about_page_editable': about_page_editable,
+                'marketing_enabled': marketing_enabled,
+                'short_description_editable': short_description_editable,
+                'sidebar_html_enabled': sidebar_html_enabled,
+                'upload_asset_url': upload_asset_url,
+                'course_handler_url': reverse_course_url('course_handler', course_key),
+                'language_options': settings.ALL_LANGUAGES,
+                'credit_eligibility_enabled': credit_eligibility_enabled,
+                'is_credit_course': False,
+                'show_min_grade_warning': False,
+                'enrollment_end_editable': enrollment_end_editable,
+                'is_prerequisite_courses_enabled': is_prerequisite_courses_enabled(),
+                'is_entrance_exams_enabled': core_toggles.ENTRANCE_EXAMS.is_enabled(),
+                'enable_extended_course_details': enable_extended_course_details,
+                'upgrade_deadline': upgrade_deadline,
+                'mfe_proctored_exam_settings_url': get_proctored_exam_settings_url(course_block.id),
+            }
+            if is_prerequisite_courses_enabled():
+                courses, in_process_course_actions = get_courses_accessible_to_user(request)
+                # exclude current course from the list of available courses
+                courses = [course for course in courses if course.id != course_key]
+                if courses:
+                    courses, __ = _process_courses_list(courses, in_process_course_actions)
+                settings_context.update({'possible_pre_requisite_courses': courses})
+
+            if credit_eligibility_enabled:
+                if is_credit_course(course_key):
+                    # get and all credit eligibility requirements
+                    credit_requirements = get_credit_requirements(course_key)
+                    # pair together requirements with same 'namespace' values
+                    paired_requirements = {}
+                    for requirement in credit_requirements:
+                        namespace = requirement.pop("namespace")
+                        paired_requirements.setdefault(namespace, []).append(requirement)
+
+                    # if 'minimum_grade_credit' of a course is not set or 0 then
+                    # show warning message to course author.
+                    show_min_grade_warning = False if course_block.minimum_grade_credit > 0 else True  # lint-amnesty, pylint: disable=simplifiable-if-expression
+                    settings_context.update(
+                        {
+                            'is_credit_course': True,
+                            'credit_requirements': paired_requirements,
+                            'show_min_grade_warning': show_min_grade_warning,
+                        }
+                    )
+
             return render_to_response('settings.html', settings_context)
         elif 'application/json' in request.META.get('HTTP_ACCEPT', ''):  # pylint: disable=too-many-nested-blocks
             if request.method == 'GET':
@@ -1056,12 +1440,63 @@ def settings_handler(request, course_key_string):  # lint-amnesty, pylint: disab
                 )
             # For every other possible method type submitted by the caller...
             else:
-                try:
-                    update_data = update_course_details(request, course_key, request.json, course_block)
-                except DjangoValidationError as err:
-                    return JsonResponseBadRequest({"error": err.message})
+                # if pre-requisite course feature is enabled set pre-requisite course
+                if is_prerequisite_courses_enabled():
+                    prerequisite_course_keys = request.json.get('pre_requisite_courses', [])
+                    if prerequisite_course_keys:
+                        if not all(is_valid_course_key(course_key) for course_key in prerequisite_course_keys):
+                            return JsonResponseBadRequest({"error": _("Invalid prerequisite course key")})
+                        set_prerequisite_courses(course_key, prerequisite_course_keys)
+                    else:
+                        # None is chosen, so remove the course prerequisites
+                        course_milestones = milestones_api.get_course_milestones(
+                            course_key=course_key,
+                            relationship="requires",
+                        )
+                        for milestone in course_milestones:
+                            entrance_exam_namespace = generate_milestone_namespace(
+                                get_namespace_choices().get('ENTRANCE_EXAM'),
+                                course_key
+                            )
+                            if milestone["namespace"] != entrance_exam_namespace:
+                                remove_prerequisite_course(course_key, milestone)
 
-                return JsonResponse(update_data, encoder=CourseSettingsEncoder)
+                # If the entrance exams feature has been enabled, we'll need to check for some
+                # feature-specific settings and handle them accordingly
+                # We have to be careful that we're only executing the following logic if we actually
+                # need to create or delete an entrance exam from the specified course
+                if core_toggles.ENTRANCE_EXAMS.is_enabled():
+                    course_entrance_exam_present = course_block.entrance_exam_enabled
+                    entrance_exam_enabled = request.json.get('entrance_exam_enabled', '') == 'true'
+                    ee_min_score_pct = request.json.get('entrance_exam_minimum_score_pct', None)
+                    # If the entrance exam box on the settings screen has been checked...
+                    if entrance_exam_enabled:
+                        # Load the default minimum score threshold from settings, then try to override it
+                        entrance_exam_minimum_score_pct = float(settings.ENTRANCE_EXAM_MIN_SCORE_PCT)
+                        if ee_min_score_pct:
+                            entrance_exam_minimum_score_pct = float(ee_min_score_pct)
+                        if entrance_exam_minimum_score_pct.is_integer():
+                            entrance_exam_minimum_score_pct = entrance_exam_minimum_score_pct / 100
+                        # If there's already an entrance exam defined, we'll update the existing one
+                        if course_entrance_exam_present:
+                            exam_data = {
+                                'entrance_exam_minimum_score_pct': entrance_exam_minimum_score_pct
+                            }
+                            update_entrance_exam(request, course_key, exam_data)
+                        # If there's no entrance exam defined, we'll create a new one
+                        else:
+                            create_entrance_exam(request, course_key, entrance_exam_minimum_score_pct)
+
+                    # If the entrance exam box on the settings screen has been unchecked,
+                    # and the course has an entrance exam attached...
+                    elif not entrance_exam_enabled and course_entrance_exam_present:
+                        delete_entrance_exam(request, course_key)
+
+                # Perform the normal update workflow for the CourseDetails model
+                return JsonResponse(
+                    CourseDetails.update_from_json(course_key, request.json, request.user),
+                    encoder=CourseSettingsEncoder
+                )
 
 
 @login_required
@@ -1081,14 +1516,18 @@ def grading_handler(request, course_key_string, grader_index=None):
     """
     course_key = CourseKey.from_string(course_key_string)
     with modulestore().bulk_operations(course_key):
-        if not has_studio_read_access(request.user, course_key):
-            raise PermissionDenied()
+        course_block = get_course_and_check_access(course_key, request.user)
 
         if 'text/html' in request.META.get('HTTP_ACCEPT', '') and request.method == 'GET':
-            if use_new_grading_page(course_key):
-                return redirect(get_grading_url(course_key))
-            grading_context = get_course_grading(course_key)
-            return render_to_response('settings_graders.html', grading_context)
+            course_details = CourseGradingModel.fetch(course_key)
+            return render_to_response('settings_graders.html', {
+                'context_course': course_block,
+                'course_locator': course_key,
+                'course_details': course_details,
+                'grading_url': reverse_course_url('grading_handler', course_key),
+                'is_credit_course': is_credit_course(course_key),
+                'mfe_proctored_exam_settings_url': get_proctored_exam_settings_url(course_block.id),
+            })
         elif 'application/json' in request.META.get('HTTP_ACCEPT', ''):
             if request.method == 'GET':
                 if grader_index is None:
@@ -1182,8 +1621,6 @@ def advanced_settings_handler(request, course_key_string):
             advanced_dict.get('mobile_available')['deprecated'] = True
 
         if 'text/html' in request.META.get('HTTP_ACCEPT', '') and request.method == 'GET':
-            if use_new_advanced_settings_page(course_key):
-                return redirect(get_advanced_settings_url(course_key))
             publisher_enabled = configuration_helpers.get_value_for_org(
                 course_block.location.org,
                 'ENABLE_PUBLISHER',
@@ -1726,7 +2163,7 @@ def get_organizations(user):
     Returns the list of organizations for which the user is allowed to create courses.
     """
     course_creator = CourseCreator.objects.filter(user=user).first()
-    if not course_creator or course_creator.state != CourseCreator.GRANTED:
+    if not course_creator:
         return []
     elif course_creator.all_organizations:
         organizations = Organization.objects.all().values_list('short_name', flat=True)

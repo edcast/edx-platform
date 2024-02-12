@@ -260,7 +260,7 @@ class TestRegisterRetiredUsername(TestCase):
             'username': 'username',
             'email': 'foo_bar' + '@bar.com',
             'name': 'foo bar',
-            'password': 'Password1234',
+            'password': '123',
             'terms_of_service': 'true',
             'honor_code': 'true',
         }

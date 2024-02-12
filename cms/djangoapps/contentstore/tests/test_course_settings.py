@@ -13,6 +13,8 @@ from unittest.mock import Mock, patch
 import ddt
 from crum import set_current_request
 from django.conf import settings
+from unittest import skip
+from django.utils.timezone import UTC
 from django.test import RequestFactory
 from django.test.utils import override_settings
 from edx_toggles.toggles.testutils import override_waffle_flag
@@ -363,6 +365,7 @@ class CourseDetailsViewTest(CourseTestCase, MilestonesTestCaseMixin):
         response = self.client.ajax_post(url, course_detail_json)
         self.assertEqual(400, response.status_code)
 
+    @skip('we remove view in studio')
     @ddt.data(
         (False, False, False),
         (True, False, True),
@@ -385,6 +388,8 @@ class CourseDetailsViewTest(CourseTestCase, MilestonesTestCaseMixin):
                 b'<h3 id="heading-entrance-exam">' in resp.content
             )
 
+    @skip('we remove view in studio')
+    @override_settings(MKTG_URLS={'ROOT': 'dummy-root'})
     def test_marketing_site_fetch(self):
         settings_details_url = get_url(self.course.id)
 
@@ -599,6 +604,9 @@ class CourseDetailsViewTest(CourseTestCase, MilestonesTestCaseMixin):
             response = self.client.get_html(settings_details_url)
             self.assertNotContains(response, "Course Short Description")
 
+# <<<<<<< HEAD
+    @skip('we remove view in studio')
+# =======
     def test_empty_course_overview_keep_default_value(self):
         """
         Test saving the course with an empty course overview.
@@ -630,6 +638,7 @@ class CourseDetailsViewTest(CourseTestCase, MilestonesTestCaseMixin):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(course_details.overview, '<p>&nbsp;</p>')
 
+# >>>>>>> open-release/palm.4
     def test_regular_site_fetch(self):
         settings_details_url = get_url(self.course.id)
 
@@ -924,33 +933,33 @@ class CourseGradingTest(CourseTestCase):
     @mock.patch('cms.djangoapps.contentstore.signals.signals.GRADING_POLICY_CHANGED.send')
     def test_update_section_grader_type(self, send_signal, tracker, uuid):
         uuid.return_value = 'mockUUID'
-        # Get the block and the section_grader_type and assert they are the default values
-        block = modulestore().get_item(self.course.location)
+        # Get the descriptor and the section_grader_type and assert they are the default values
+        descriptor = modulestore().get_item(self.course.location)
         section_grader_type = CourseGradingModel.get_section_grader_type(self.course.location)
 
         self.assertEqual('notgraded', section_grader_type['graderType'])
-        self.assertEqual(None, block.format)
-        self.assertEqual(False, block.graded)
+        self.assertEqual(None, descriptor.format)
+        self.assertEqual(False, descriptor.graded)
 
         # Change the default grader type to Homework, which should also mark the section as graded
         CourseGradingModel.update_section_grader_type(self.course, 'Homework', self.user)
-        block = modulestore().get_item(self.course.location)
+        descriptor = modulestore().get_item(self.course.location)
         section_grader_type = CourseGradingModel.get_section_grader_type(self.course.location)
         grading_policy_1 = self._grading_policy_hash_for_course()
 
         self.assertEqual('Homework', section_grader_type['graderType'])
-        self.assertEqual('Homework', block.format)
-        self.assertEqual(True, block.graded)
+        self.assertEqual('Homework', descriptor.format)
+        self.assertEqual(True, descriptor.graded)
 
         # Change the grader type back to notgraded, which should also unmark the section as graded
         CourseGradingModel.update_section_grader_type(self.course, 'notgraded', self.user)
-        block = modulestore().get_item(self.course.location)
+        descriptor = modulestore().get_item(self.course.location)
         section_grader_type = CourseGradingModel.get_section_grader_type(self.course.location)
         grading_policy_2 = self._grading_policy_hash_for_course()
 
         self.assertEqual('notgraded', section_grader_type['graderType'])
-        self.assertEqual(None, block.format)
-        self.assertEqual(False, block.graded)
+        self.assertEqual(None, descriptor.format)
+        self.assertEqual(False, descriptor.graded)
 
         # one for each call to update_section_grader_type()
         send_signal.assert_has_calls([
@@ -1866,10 +1875,10 @@ id=\"course-enrollment-end-time\" value=\"\" placeholder=\"HH:MM\" autocomplete=
         """
         Return the course details page as either global or non-global staff
         """
-        user = UserFactory(is_staff=global_staff, password=self.TEST_PASSWORD)
+        user = UserFactory(is_staff=global_staff)
         CourseInstructorRole(self.course.id).add_users(user)
 
-        self.client.login(username=user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=user.username, password='test')
 
         return self.client.get_html(self.course_details_url)
 
@@ -1879,6 +1888,7 @@ id=\"course-enrollment-end-time\" value=\"\" placeholder=\"HH:MM\" autocomplete=
 
         Assert that all editable field content exists and no
         uneditable field content exists for enrollment end fields.
+        EDCAST disables all fields
         """
         self.assertEqual(response.status_code, 200)
         for element in self.NOT_EDITABLE_ELEMENTS:
@@ -1909,7 +1919,7 @@ id=\"course-enrollment-end-time\" value=\"\" placeholder=\"HH:MM\" autocomplete=
         Feature flag 'ENABLE_PUBLISHER' is not enabled.
         User is global staff.
         """
-        self._verify_editable(self._get_course_details_response(True))
+        self._verify_not_editable(self._get_course_details_response(True))
 
     @mock.patch.dict("django.conf.settings.FEATURES", {'ENABLE_PUBLISHER': False})
     def test_course_details_with_disabled_setting_non_global_staff(self):
@@ -1928,6 +1938,7 @@ id=\"course-enrollment-end-time\" value=\"\" placeholder=\"HH:MM\" autocomplete=
 
         Feature flag 'ENABLE_PUBLISHER' is enabled.
         User is global staff.
+        Disabled by EDCAST
         """
         self._verify_editable(self._get_course_details_response(True))
 
@@ -1939,5 +1950,6 @@ id=\"course-enrollment-end-time\" value=\"\" placeholder=\"HH:MM\" autocomplete=
 
         Feature flag 'ENABLE_PUBLISHER' is enabled.
         User is non-global staff.
+        Disabled by EDCAST
         """
         self._verify_not_editable(self._get_course_details_response(False))

@@ -54,7 +54,7 @@ class AdminCourseModePageTest(ModuleStoreTestCase):
             '_expiration_datetime_1': expiration.time(),
         }
 
-        self.client.login(username=user.username, password=self.TEST_PASSWORD)
+        self.client.login(username=user.username, password='test')
 
         # Create a new course mode from django admin page
         response = self.client.post(reverse('admin:course_modes_coursemode_add'), data=data)

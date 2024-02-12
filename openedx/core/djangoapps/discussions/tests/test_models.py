@@ -16,8 +16,6 @@ from ..config.waffle import ENABLE_NEW_STRUCTURE_DISCUSSIONS
 from ..models import DEFAULT_CONFIG_ENABLED, Provider, get_default_provider_type
 from ..models import DiscussionsConfiguration
 from ..models import ProviderFilter
-from ..models import PostingRestriction
-
 
 SUPPORTED_PROVIDERS = [
     'legacy',
@@ -143,7 +141,6 @@ class DiscussionsConfigurationModelTest(TestCase):
         self.configuration_with_defaults.save()
         self.configuration_with_values = DiscussionsConfiguration(
             context_key=self.course_key_with_values,
-            posting_restrictions=PostingRestriction.ENABLED,
             enabled=False,
             provider_type=Provider.LEGACY,
             plugin_configuration={
@@ -167,7 +164,6 @@ class DiscussionsConfigurationModelTest(TestCase):
         """
         configuration = DiscussionsConfiguration.objects.get(context_key=self.course_key_with_defaults)
         assert configuration is not None
-        assert configuration.posting_restrictions == PostingRestriction.DISABLED
         assert configuration.enabled  # by default
         assert configuration.lti_configuration is None
         assert len(configuration.plugin_configuration.keys()) == 0
@@ -179,7 +175,6 @@ class DiscussionsConfigurationModelTest(TestCase):
         """
         configuration = DiscussionsConfiguration.objects.get(context_key=self.course_key_with_values)
         assert configuration is not None
-        assert configuration.posting_restrictions == PostingRestriction.ENABLED
         assert not configuration.enabled
         assert configuration.lti_configuration is None
         actual_url = configuration.plugin_configuration.get('url')
@@ -192,7 +187,6 @@ class DiscussionsConfigurationModelTest(TestCase):
         Assert we can update an existing record
         """
         configuration = DiscussionsConfiguration.objects.get(context_key=self.course_key_with_defaults)
-        configuration.posting_restrictions = PostingRestriction.DISABLED
         configuration.enabled = False
         configuration.plugin_configuration = {
             'url': 'http://localhost',
@@ -201,7 +195,6 @@ class DiscussionsConfigurationModelTest(TestCase):
         configuration.save()
         configuration = DiscussionsConfiguration.objects.get(context_key=self.course_key_with_defaults)
         assert configuration is not None
-        assert configuration.posting_restrictions == PostingRestriction.DISABLED
         assert not configuration.enabled
         assert configuration.lti_configuration is None
         assert configuration.plugin_configuration['url'] == 'http://localhost'
@@ -240,7 +233,6 @@ class DiscussionsConfigurationModelTest(TestCase):
         with override_waffle_flag(ENABLE_NEW_STRUCTURE_DISCUSSIONS, active=new_structure_enabled):
             configuration = DiscussionsConfiguration.get(self.course_key_without_config)
             assert configuration is not None
-            assert configuration.posting_restrictions == PostingRestriction.DISABLED
             assert configuration.enabled == DEFAULT_CONFIG_ENABLED
             assert configuration.provider_type == default_provider_type
             assert not configuration.lti_configuration
@@ -252,7 +244,6 @@ class DiscussionsConfigurationModelTest(TestCase):
         """
         configuration = DiscussionsConfiguration.get(self.course_key_with_defaults)
         assert configuration is not None
-        assert configuration.posting_restrictions == PostingRestriction.DISABLED
         assert configuration.enabled
         assert not configuration.lti_configuration
         assert not configuration.plugin_configuration
@@ -264,7 +255,6 @@ class DiscussionsConfigurationModelTest(TestCase):
         """
         configuration = DiscussionsConfiguration.get(self.course_key_with_values)
         assert configuration is not None
-        assert configuration.posting_restrictions == PostingRestriction.ENABLED
         assert not configuration.enabled
         assert not configuration.lti_configuration
         assert configuration.plugin_configuration

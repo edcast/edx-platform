@@ -2,11 +2,11 @@
 URLs for the V1 of the Entitlements API.
 """
 
-from django.urls import include
-from django.urls import path, re_path
+from django.conf.urls import include
 from rest_framework.routers import DefaultRouter
 
-from .views import EntitlementEnrollmentViewSet, EntitlementViewSet, SubscriptionsRevokeVerifiedAccessView
+from django.urls import path, re_path
+from .views import EntitlementEnrollmentViewSet, EntitlementViewSet
 
 router = DefaultRouter()
 router.register(r'entitlements', EntitlementViewSet, basename='entitlements')
@@ -23,10 +23,5 @@ urlpatterns = [
         fr'entitlements/(?P<uuid>{EntitlementViewSet.ENTITLEMENT_UUID4_REGEX})/enrollments$',
         ENROLLMENTS_VIEW,
         name='enrollments'
-    ),
-    path(
-        'subscriptions/entitlements/revoke',
-        SubscriptionsRevokeVerifiedAccessView.as_view(),
-        name='revoke_subscriptions_verified_access'
     )
 ]

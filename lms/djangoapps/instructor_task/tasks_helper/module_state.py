@@ -9,6 +9,7 @@ from time import time
 
 from django.utils.translation import gettext_noop
 from opaque_keys.edx.keys import UsageKey
+from xblock.runtime import KvsFieldData
 from xblock.scorable import Score
 
 from xmodule.capa.responsetypes import LoncapaProblemError, ResponseError, StudentInputError
@@ -17,9 +18,9 @@ from common.djangoapps.track.event_transaction_utils import create_new_event_tra
 from common.djangoapps.track.views import task_track
 from common.djangoapps.util.db import outer_atomic
 from lms.djangoapps.courseware.courses import get_problems_in_section
-from lms.djangoapps.courseware.model_data import FieldDataCache
+from lms.djangoapps.courseware.model_data import DjangoKeyValueStore, FieldDataCache
 from lms.djangoapps.courseware.models import StudentModule
-from lms.djangoapps.courseware.block_render import get_block_for_descriptor
+from lms.djangoapps.courseware.block_render import get_block_for_descriptor_internal
 from lms.djangoapps.grades.api import events as grades_events
 from openedx.core.lib.courses import get_course_by_id
 from xmodule.modulestore.django import modulestore  # lint-amnesty, pylint: disable=wrong-import-order
@@ -36,7 +37,7 @@ def perform_module_state_update(update_fcn, filter_fcn, _entry_id, course_id, ta
     Performs generic update by visiting StudentModule instances with the update_fcn provided.
 
     The student modules are fetched for update the `update_fcn` is called on each StudentModule
-    that passes the resulting filtering. It is passed four arguments:  the block for
+    that passes the resulting filtering. It is passed four arguments:  the module_descriptor for
     the module pointed to by the module_state_key, the particular StudentModule to update, the
     xblock_instance_args, and the task_input being passed through.  If the value returned by the
     update function evaluates to a boolean True, the update is successful; False indicates the update
@@ -72,9 +73,9 @@ def perform_module_state_update(update_fcn, filter_fcn, _entry_id, course_id, ta
         usage_key = UsageKey.from_string(problem_url).map_into_course(course_id)
         usage_keys.append(usage_key)
 
-        # find the problem block:
-        problem_block = modulestore().get_item(usage_key)
-        problems[str(usage_key)] = problem_block
+        # find the problem descriptor:
+        problem_descriptor = modulestore().get_item(usage_key)
+        problems[str(usage_key)] = problem_descriptor
 
     # if entrance_exam is present grab all problems in it
     if entrance_exam_url:
@@ -90,10 +91,10 @@ def perform_module_state_update(update_fcn, filter_fcn, _entry_id, course_id, ta
 
     for module_to_update in modules_to_update:
         task_progress.attempted += 1
-        block = problems[str(module_to_update.module_state_key)]
+        module_descriptor = problems[str(module_to_update.module_state_key)]
         # There is no try here:  if there's an error, we let it throw, and the task will
         # be marked as FAILED, with a stack trace.
-        update_status = update_fcn(block, module_to_update, task_input)
+        update_status = update_fcn(module_descriptor, module_to_update, task_input)
         if update_status == UPDATE_STATUS_SUCCEEDED:
             # If the update_fcn returns true, then it performed some kind of work.
             # Logging of failures is left to the update_fcn itself.
@@ -109,9 +110,9 @@ def perform_module_state_update(update_fcn, filter_fcn, _entry_id, course_id, ta
 
 
 @outer_atomic
-def rescore_problem_module_state(xblock_instance_args, block, student_module, task_input):
+def rescore_problem_module_state(xblock_instance_args, module_descriptor, student_module, task_input):
     '''
-    Takes an XBlock and a corresponding StudentModule object, and
+    Takes an XModule descriptor and a corresponding StudentModule object, and
     performs rescoring on the student's problem submission.
 
     Throws exceptions if the rescoring is fatal and should be aborted if in a loop.
@@ -134,7 +135,7 @@ def rescore_problem_module_state(xblock_instance_args, block, student_module, ta
         instance = _get_module_instance_for_task(
             course_id,
             student,
-            block,
+            module_descriptor,
             xblock_instance_args,
             grade_bucket_type='rescore',
             course=course
@@ -207,9 +208,9 @@ def rescore_problem_module_state(xblock_instance_args, block, student_module, ta
 
 
 @outer_atomic
-def override_score_module_state(xblock_instance_args, block, student_module, task_input):
+def override_score_module_state(xblock_instance_args, module_descriptor, student_module, task_input):
     '''
-    Takes an XBlock and a corresponding StudentModule object, and
+    Takes an XModule descriptor and a corresponding StudentModule object, and
     performs an override on the student's problem score.
 
     Throws exceptions if the override is fatal and should be aborted if in a loop.
@@ -231,7 +232,7 @@ def override_score_module_state(xblock_instance_args, block, student_module, tas
         instance = _get_module_instance_for_task(
             course_id,
             student,
-            block,
+            module_descriptor,
             xblock_instance_args,
             course=course
         )
@@ -287,7 +288,7 @@ def override_score_module_state(xblock_instance_args, block, student_module, tas
 
 
 @outer_atomic
-def reset_attempts_module_state(xblock_instance_args, _block, student_module, _task_input):
+def reset_attempts_module_state(xblock_instance_args, _module_descriptor, student_module, _task_input):
     """
     Resets problem attempts to zero for specified `student_module`.
 
@@ -314,7 +315,7 @@ def reset_attempts_module_state(xblock_instance_args, _block, student_module, _t
 
 
 @outer_atomic
-def delete_problem_module_state(xblock_instance_args, _block, student_module, _task_input):
+def delete_problem_module_state(xblock_instance_args, _module_descriptor, student_module, _task_input):
     """
     Delete the StudentModule entry.
 
@@ -328,15 +329,21 @@ def delete_problem_module_state(xblock_instance_args, _block, student_module, _t
     return UPDATE_STATUS_SUCCEEDED
 
 
-def _get_module_instance_for_task(course_id, student, block, xblock_instance_args=None,
+def _get_module_instance_for_task(course_id, student, module_descriptor, xblock_instance_args=None,
                                   grade_bucket_type=None, course=None):
     """
-    Fetches a StudentModule instance for a given `course_id`, `student` object, and `block`.
+    Fetches a StudentModule instance for a given `course_id`, `student` object, and `module_descriptor`.
 
-    `xblock_instance_args` is used to provide information for creating a track function.
-    It is passed, along with `grade_bucket_type`, to get_block_for_descriptor.
+    `xblock_instance_args` is used to provide information for creating a track function and an XQueue callback.
+    These are passed, along with `grade_bucket_type`, to get_block_for_descriptor_internal, which sidesteps
+    the need for a Request object when instantiating an xblock instance.
     """
-    # get request-related tracking information from args passthrough, and supplement with task-specific information:
+    # reconstitute the problem's corresponding XModule:
+    field_data_cache = FieldDataCache.cache_for_descriptor_descendents(course_id, student, module_descriptor)
+    student_data = KvsFieldData(DjangoKeyValueStore(field_data_cache))
+
+    # get request-related tracking information from args passthrough, and supplement with task-specific
+    # information:
     request_info = xblock_instance_args.get('request_info', {}) if xblock_instance_args is not None else {}
     task_info = {"student": student.username, "task_id": _get_task_id_from_xblock_args(xblock_instance_args)}
 
@@ -344,18 +351,17 @@ def _get_module_instance_for_task(course_id, student, block, xblock_instance_arg
         '''
         Make a tracking function that logs what happened.
 
-        For insertion into runtime, and used by CapaModule, which will
+        For insertion into ModuleSystem, and used by CapaModule, which will
         provide the event_type (as string) and event (as dict) as arguments.
         The request_info and task_info (and page) are provided here.
         '''
         return lambda event_type, event: task_track(request_info, task_info, event_type, event, page='x_module_task')
 
-    return get_block_for_descriptor(
+    return get_block_for_descriptor_internal(
         user=student,
-        request=None,
-        block=block,
-        field_data_cache=FieldDataCache.cache_for_block_descendents(course_id, student, block),
-        course_key=course_id,
+        descriptor=module_descriptor,
+        student_data=student_data,
+        course_id=course_id,
         track_function=make_track_function(),
         grade_bucket_type=grade_bucket_type,
         # This module isn't being used for front-end rendering
@@ -369,7 +375,7 @@ def _get_track_function_for_task(student, xblock_instance_args=None, source_page
     """
     Make a tracking function that logs what happened.
 
-    For insertion into runtime, and used by CapaModule, which will
+    For insertion into ModuleSystem, and used by CapaModule, which will
     provide the event_type (as string) and event (as dict) as arguments.
     The request_info and task_info (and page) are provided here.
     """

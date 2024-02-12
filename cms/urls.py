@@ -3,15 +3,15 @@ Urls of Studio.
 """
 
 from django.conf import settings
+from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib.admin import autodiscover as django_autodiscover
-from django.urls import include
 from django.urls import path, re_path
 from django.utils.translation import gettext_lazy as _
-from django.contrib import admin
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from auth_backends.urls import oauth2_urlpatterns
 from edx_api_doc_tools import make_docs_urls
+from django.contrib import admin
+from cm_plugin.urls import urlpatterns as cm_urlpatterns
 
 import openedx.core.djangoapps.common_views.xblock
 import openedx.core.djangoapps.debug.views
@@ -67,7 +67,6 @@ urlpatterns = oauth2_urlpatterns + [
     path('not_found', contentstore_views.not_found, name='not_found'),
     path('server_error', contentstore_views.server_error, name='server_error'),
     path('organizations', OrganizationListView.as_view(), name='organizations'),
-    path('api/toggles/', include('openedx.core.djangoapps.waffle_utils.urls')),
 
     # noop to squelch ajax errors
     path('event', contentstore_views.event, name='event'),
@@ -78,8 +77,8 @@ urlpatterns = oauth2_urlpatterns + [
     path('api/user/', include('openedx.core.djangoapps.user_api.urls')),
 
     # Update session view
-    path('lang_pref/update_language', openedx.core.djangoapps.lang_pref.views.update_language,
-         name='update_language'
+    path('lang_pref/session_language', openedx.core.djangoapps.lang_pref.views.update_session_language,
+         name='session_language'
          ),
 
     # Darklang View to change the preview language (or dark language)
@@ -103,6 +102,9 @@ urlpatterns = oauth2_urlpatterns + [
             ),
     re_path(r'^home/?$', contentstore_views.course_listing, name='home'),
     re_path(r'^home_library/?$', contentstore_views.library_listing, name='home_library'),
+    #  TODO Rupesh : fix path to set pattern 
+    re_path(fr'^cm/course/(/)?(?P<course_id>.+)?$',contentstore_views.cm_course_handler),
+    
     re_path(fr'^course/{settings.COURSE_KEY_PATTERN}/search_reindex?$',
             contentstore_views.course_search_index_handler,
             name='course_search_index_handler'
@@ -125,9 +127,6 @@ urlpatterns = oauth2_urlpatterns + [
     re_path(fr'^assets/{settings.COURSE_KEY_PATTERN}/{settings.ASSET_KEY_PATTERN}?$',
             contentstore_views.assets_handler,
             name='assets_handler'),
-    re_path(fr'^assets/{settings.COURSE_KEY_PATTERN}/{settings.ASSET_KEY_PATTERN}/usage',
-            contentstore_views.asset_usage_path_handler,
-            name='asset_usage_path_handler'),
     re_path(fr'^import/{COURSELIKE_KEY_PATTERN}$', contentstore_views.import_handler,
             name='import_handler'),
     re_path(fr'^import_status/{COURSELIKE_KEY_PATTERN}/(?P<filename>.+)$',
@@ -169,7 +168,11 @@ urlpatterns = oauth2_urlpatterns + [
             contentstore_views.video_images_handler, name='video_images_handler'),
     path('video_images_upload_enabled', contentstore_views.video_images_upload_enabled,
          name='video_images_upload_enabled'),
-    path('video_features/', contentstore_views.get_video_features, name='video_features'),
+    re_path(
+        fr'^video_features/{settings.COURSE_KEY_PATTERN}',
+        contentstore_views.get_video_features,
+        name='video_features'
+    ),
     re_path(fr'^transcript_preferences/{settings.COURSE_KEY_PATTERN}$',
             contentstore_views.transcript_preferences_handler, name='transcript_preferences_handler'),
     re_path(fr'^transcript_credentials/{settings.COURSE_KEY_PATTERN}$',
@@ -192,6 +195,8 @@ urlpatterns = oauth2_urlpatterns + [
     path('api/tasks/v0/', include('user_tasks.urls')),
     path('accessibility', contentstore_views.accessibility, name='accessibility'),
 ]
+
+urlpatterns += cm_urlpatterns
 
 if not settings.DISABLE_DEPRECATED_SIGNIN_URL:
     # TODO: Remove deprecated signin url when traffic proves it is no longer in use
@@ -282,12 +287,12 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
     urlpatterns += static(
-        settings.VIDEO_IMAGE_SETTINGS['BASE_URL'],
+        settings.VIDEO_IMAGE_SETTINGS['STORAGE_KWARGS']['base_url'],
         document_root=settings.VIDEO_IMAGE_SETTINGS['STORAGE_KWARGS']['location']
     )
 
     urlpatterns += static(
-        settings.VIDEO_TRANSCRIPTS_SETTINGS['BASE_URL'],
+        settings.VIDEO_TRANSCRIPTS_SETTINGS['STORAGE_KWARGS']['base_url'],
         document_root=settings.VIDEO_TRANSCRIPTS_SETTINGS['STORAGE_KWARGS']['location']
     )
 
@@ -333,21 +338,7 @@ from openedx.core.djangoapps.plugins.constants import ProjectType  # isort:skip
 
 urlpatterns.extend(get_plugin_url_patterns(ProjectType.CMS))
 
-# Contentstore REST APIs
+# Contentstore
 urlpatterns += [
     path('api/contentstore/', include('cms.djangoapps.contentstore.rest_api.urls'))
-]
-
-# Content tagging
-urlpatterns += [
-    path('api/content_tagging/', include(('openedx.core.djangoapps.content_tagging.urls', 'content_tagging'))),
-]
-
-# Authoring-api specific API docs (using drf-spectacular and openapi-v3).
-# This is separate from and in addition to the full studio swagger documentation already existing at /api-docs.
-# Custom settings are provided in SPECTACULAR_SETTINGS as environment variables
-# Filter function in cms/lib/spectacular.py determines paths that are swagger-documented.
-urlpatterns += [
-    re_path('^authoring-api/ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    re_path('^authoring-api/schema/', SpectacularAPIView.as_view(), name='schema'),
 ]

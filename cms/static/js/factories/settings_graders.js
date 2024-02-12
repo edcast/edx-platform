@@ -2,8 +2,7 @@ define([
     'jquery', 'js/views/settings/grading', 'js/models/settings/course_grading_policy'
 ], function($, GradingView, CourseGradingPolicyModel) {
     'use strict';
-
-    return function(courseDetails, gradingUrl, courseAssignmentLists) {
+    return function(courseDetails, gradingUrl) {
         var model, editor;
 
         $('form :input')
@@ -18,8 +17,7 @@ define([
         model.urlRoot = gradingUrl;
         editor = new GradingView({
             el: $('.settings-grading'),
-            model: model,
-            courseAssignmentLists: courseAssignmentLists
+            model: model
         });
         editor.render();
     };

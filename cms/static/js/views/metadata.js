@@ -12,7 +12,6 @@ define(
     function(Backbone, BaseView, _, MetadataModel, AbstractEditor, FileUpload, UploadDialog,
         LicenseModel, LicenseView, TranscriptUtils, VideoList, VideoTranslations, HtmlUtils) {
         'use strict';
-
         var Metadata = {};
 
         Metadata.Editor = BaseView.extend({
@@ -189,7 +188,6 @@ define(
                         this.max = Number(options[max]);
                         this.$el.find('input').attr(max, numToString(this.max));
                     }
-                    // eslint-disable-next-line no-undef-init
                     var stepValue = undefined;
                     if (options.hasOwnProperty(step)) {
                     // Parse step and convert to String. Polyfill doesn't like float values like ".1" (expects "0.1").
@@ -235,10 +233,8 @@ define(
                 // This first filtering if statement is take from polyfill to prevent
                 // non-numeric input (for browsers that don't use polyfill because they DO have a number input type).
                 var _ref, _ref1;
-                // eslint-disable-next-line no-cond-assign
-                if (((_ref = e.keyCode) !== 8 && _ref !== 9 && _ref !== 35 && _ref !== 36 && _ref !== 37 && _ref !== 39)
-                // eslint-disable-next-line no-cond-assign
-                && ((_ref1 = e.which) !== 45 && _ref1 !== 46 && _ref1 !== 48 && _ref1 !== 49 && _ref1 !== 50 && _ref1 !== 51
+                if (((_ref = e.keyCode) !== 8 && _ref !== 9 && _ref !== 35 && _ref !== 36 && _ref !== 37 && _ref !== 39) &&
+                ((_ref1 = e.which) !== 45 && _ref1 !== 46 && _ref1 !== 48 && _ref1 !== 49 && _ref1 !== 50 && _ref1 !== 51
                     && _ref1 !== 52 && _ref1 !== 53 && _ref1 !== 54 && _ref1 !== 55 && _ref1 !== 56 && _ref1 !== 57)) {
                     e.preventDefault();
                 }
@@ -316,7 +312,7 @@ define(
             updateUrlFieldVisibility: function() {
                 const urlContainer = this.$el.find('.public-access-block-url-container');
 
-                if (this.getValueFromEditor()) {
+                if(this.getValueFromEditor()) {
                     urlContainer.removeClass('is-hidden');
                 } else {
                     urlContainer.addClass('is-hidden');
@@ -447,7 +443,6 @@ define(
                 }).reverse();
 
                 seconds = _.reduce(list, function(memo, num, index) {
-                    // eslint-disable-next-line prefer-exponentiation-operator, no-restricted-properties
                     return memo + num * Math.pow(60, index);
                 }, 0);
 
@@ -519,7 +514,6 @@ define(
                 var list = this.$el.find('ol'),
                     frag = document.createDocumentFragment();
 
-                // eslint-disable-next-line no-shadow
                 _.each(value, function(value, key) {
                     var template = _.template(
                         HtmlUtils.joinHtml(
@@ -567,6 +561,7 @@ define(
                 }
             }
         });
+
 
         /**
      * Provides convenient way to upload/download files in component edit.

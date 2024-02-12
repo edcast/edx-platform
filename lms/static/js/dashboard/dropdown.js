@@ -15,7 +15,6 @@ var edx = edx || {};
             ariaExpandedState = ($dropdownButton.attr('aria-expanded') === 'true'),
             menuItems = $dropdown.find('a');
 
-        // eslint-disable-next-line no-shadow
         var catchKeyPress = function(object, event) {
             // get currently focused item
             var $focusedItem = $(':focus');
@@ -30,7 +29,6 @@ var edx = edx || {};
             if (event.which === 32 || event.which === 27) {
                 $dropdownButton.click();
                 event.preventDefault();
-            // eslint-disable-next-line brace-style
             }
 
             // if up arrow key pressed or shift+tab
@@ -43,7 +41,6 @@ var edx = edx || {};
                     menuItems.get(itemToFocusIndex).focus();
                 }
                 event.preventDefault();
-            // eslint-disable-next-line brace-style
             }
 
             // if down arrow key pressed or tab key

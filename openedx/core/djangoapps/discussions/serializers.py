@@ -13,7 +13,6 @@ from openedx.core.djangoapps.django_comment_common.models import CourseDiscussio
 from openedx.core.lib.courses import get_course_by_id
 from .models import DiscussionsConfiguration, Provider
 from .utils import available_division_schemes, get_divided_discussions
-from ..content.course_overviews.models import CourseOverviewTab
 
 
 class LtiSerializer(serializers.ModelSerializer):
@@ -177,7 +176,6 @@ class DiscussionsConfigurationSerializer(serializers.ModelSerializer):
             'enable_in_context',
             'enable_graded_units',
             'unit_level_visibility',
-            'posting_restrictions',
         ]
         fields = [
             'enabled',
@@ -260,12 +258,6 @@ class DiscussionsConfigurationSerializer(serializers.ModelSerializer):
         # have already been set
         instance = self._update_lti(instance, validated_data)
         instance.save()
-        # find the discussion tab and update its visibility as per discussions configurations
-        # It can go out of sync due to unknown reasons
-        CourseOverviewTab.objects.filter(
-            course_overview_id=instance.context_key,
-            type='discussion'
-        ).update(is_hidden=not instance.enabled)
         update_discussions_settings_from_course_task.delay(str(instance.context_key))
         return instance
 

@@ -2,7 +2,6 @@ define([
     'jquery', 'underscore', 'annotator_1.2.9', 'logger', 'js/edxnotes/views/notes_factory'
 ], function($, _, Annotator, Logger, NotesFactory) {
     'use strict';
-
     describe('EdxNotes Accessibility Plugin', function() {
         function keyDownEvent(key) {
             return $.Event('keydown', {keyCode: key});
@@ -139,7 +138,6 @@ define([
             });
 
             it('should focus highlighted text after closing', function() {
-                // eslint-disable-next-line no-shadow
                 var note;
                 highlight.trigger(keyDownEvent(this.KEY.ENTER));
                 note = this.annotator.element.find('.annotator-edit');
