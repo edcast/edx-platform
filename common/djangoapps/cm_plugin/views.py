@@ -156,6 +156,7 @@ def cm_create_new_user(request):
             if validate_token(request.body, request) is False:
                 return HttpResponse('Unauthorized', status=401)
             try:
+                settings.FEATURES['ALLOW_PUBLIC_ACCOUNT_CREATION'] = True
                 form = AccountCreationForm(
                         data=request.json,
                         tos_required=False
@@ -178,7 +179,8 @@ def cm_create_new_user(request):
             except:
                     content = {'errors':'Bad Request'}
                     status_code = 400
-
+            
+            settings.FEATURES['ALLOW_PUBLIC_ACCOUNT_CREATION'] = False
             return HttpResponse(content = json.dumps(content), \
                     content_type = 'application/json', \
                     status = status_code)
