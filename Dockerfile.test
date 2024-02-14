@@ -1,0 +1,3 @@
+FROM docker.io/ubuntu:20.04 as minimal
+
+RUN pip install tutor==16.1.8
