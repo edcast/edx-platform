@@ -130,12 +130,12 @@ from openedx.core.release import RELEASE_LINE
         <%block name="content"></%block>
         </div>
       </main>
-
+      <!--
       % if user.is_authenticated:
         <%include file="widgets/sock.html" args="online_help_token=online_help_token" />
       % endif
       <%include file="widgets/footer.html" />
-
+      -->
       <div id="page-notification"></div>
     </div>
 
@@ -163,9 +163,11 @@ from openedx.core.release import RELEASE_LINE
         });
       </script>
     % endif
+    <!--
     % if user.is_authenticated:
       <%static:webpack entry='js/sock'/>
     % endif
+    -->
     <%block name='page_bundle'>
       <script type="text/javascript">
       require(['js/factories/base'], function () {
@@ -173,7 +175,9 @@ from openedx.core.release import RELEASE_LINE
       });
       </script>
     </%block>
+    <!--
     <%include file="widgets/segment-io-footer.html" />
+    -->
     <div class="modal-cover"></div>
   </body>
 </html>
