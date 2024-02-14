@@ -1,0 +1,6 @@
+<form id="redirect-form" method="POST" action="{{ referrer }}" target="_top">
+    <input type="hidden" name="visited" value="true" />
+  </form>
+  <script type="text/javascript">
+    document.getElementById('redirect-form').submit();
+  </script>
