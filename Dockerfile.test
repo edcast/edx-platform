@@ -4,6 +4,6 @@ RUN apt-get update -y
 
 RUN apt install python3-pip -y
 
-RUN pip3 install tutor==16.1.8
+RUN pip3 install tutor[full]==16.1.8
 
 RUN tutor images build openedx --build-arg EDX_PLATFORM_REPOSITORY=https://github.com/edcast/edx-platform --build-arg EDX_PLATFORM_VERSION=master
