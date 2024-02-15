@@ -1,5 +1,5 @@
 FROM docker.io/ubuntu:20.04 as minimal
 
-RUN python3 -m pip3 install
+RUN apt install python3-pip -y
 
 RUN pip3 install tutor==16.1.8
