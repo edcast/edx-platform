@@ -6,5 +6,4 @@ RUN apt install python3-pip git -y
 
 RUN pip3 install tutor[full]==16.1.8
 
-
-RUN git clone https://github.com/edcast/edx-platform.git
+RUN tutor images build openedx --build-arg EDX_PLATFORM_REPOSITORY=https://github.com/edcast/edx-platform --build-arg EDX_PLATFORM_VERSION=palm-release/migration-version
