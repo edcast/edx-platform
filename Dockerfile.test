@@ -1,6 +1,6 @@
 FROM docker.io/ubuntu:20.04 as minimal
 
-RUN sudo apt-get update -y
+RUN apt-get update -y
 
 RUN apt install python3-pip -y
 
