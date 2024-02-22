@@ -164,7 +164,9 @@
         <nav class="nav-related" aria-label="${_('Other Course Settings')}">
           <ul>
             <li class="nav-item"><a href="${detailed_settings_url}">${_("Details & Schedule")}</a></li>
+            <!--
             <li class="nav-item"><a href="${course_team_url}">${_("Course Team")}</a></li>
+            -->
             <li class="nav-item"><a href="${utils.reverse_course_url('group_configurations_list_handler', context_course.id)}">${_("Group Configurations")}</a></li>
             % if has_studio_advanced_settings_access(request.user):
             <li class="nav-item"><a href="${advanced_settings_url}">${_("Advanced Settings")}</a></li>
