@@ -140,7 +140,6 @@ def instructor_dashboard_2(request, course_id):  # lint-amnesty, pylint: disable
     if access['staff']:
         sections_content = [
             _section_course_info(course, access),
-            _section_membership(course, access),
             _section_cohort_management(course, access),
             _section_student_admin(course, access),
         ]
