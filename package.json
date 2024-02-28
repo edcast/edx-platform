@@ -13,7 +13,7 @@
     "@edx/edx-proctoring": "^4.12.2",
     "@edx/frontend-component-cookie-policy-banner": "2.2.0",
     "@edx/paragon": "2.6.4",
-    "@edx/studio-frontend": "git+https://github.com/hdubey09/studio-frontend-edcast.git#af6f20cc1458b1e79962c543576bb92323f7e91b",
+    "@edx/studio-frontend": "git+https://github.com/hdubey09/studio-frontend-edcast.git#5c4d2e46d08a6a2ec40d08edb873bada5a097204",
     "axios": "^0.27.2",
     "babel-loader": "8.2.5",
     "babel-plugin-transform-class-properties": "6.24.1",
