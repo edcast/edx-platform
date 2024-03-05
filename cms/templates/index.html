@@ -330,6 +330,7 @@ from openedx.core.djangolib.js_utils import (
 
       % if libraries_enabled or archived_courses:
       <ul id="course-index-tabs">
+        <!--
       <li class="courses-tab ${ 'active' if active_tab == 'courses' else ''}">
           % if split_studio_home and active_tab == 'libraries':
             <a href="${reverse('home')}">${_("Courses")}</a>
@@ -346,7 +347,7 @@ from openedx.core.djangolib.js_utils import (
             % endif
         </li>
         % endif
-
+        -->
         % if libraries_enabled:
             % if redirect_to_library_authoring_mfe:
             <li><a href="${library_authoring_mfe_url}">${_("Libraries")}</a></li>
@@ -362,7 +363,7 @@ from openedx.core.djangolib.js_utils import (
         % endif
       </ul>
       % endif
-
+      <!--
       %if len(courses) > 0 or optimization_enabled:
       <div class="courses courses-tab react-course-listing ${ 'active' if active_tab == 'courses' else ''}">
         ${static.renderReact(
@@ -407,7 +408,7 @@ from openedx.core.djangolib.js_utils import (
 
       </div>
       % endif
-
+      -->
 
       %if course_creator_status == "unrequested":
       <div class="wrapper wrapper-creationrights">
@@ -524,7 +525,7 @@ from openedx.core.djangolib.js_utils import (
       </div>
 
       %else:
-      <div class="notice notice-incontext notice-instruction notice-instruction-nocourses list-notices libraries-tab">
+      <div class="notice notice-incontext notice-instruction notice-instruction-nocourses list-notices libraries-tab ${ 'active' if active_tab == 'libraries' else ''}">
         <div class="notice-item">
           <div class="msg">
               <h3 class="title">${_("Were you expecting to see a particular library here?")}</h3>
