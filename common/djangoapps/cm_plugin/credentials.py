@@ -6,7 +6,10 @@ from django.conf import settings
 
 log = logging.getLogger(__name__)
 
-
+"""
+edcustom: Function to retrieve the SECRET setting from cm_plugin.py file in tutor-plugins directory
+cm_plugin   /home/dev/.local/share/tutor-plugins/cm_plugin.py
+"""
 def _app_id():
     return settings.EDCAST_APP_ID
 
@@ -48,6 +51,6 @@ KEYS = {
 # as needed.
 def cm_credentials(key):
     try:
-        return KEYS[key]()
+        return KEYS[key]() # edcustom: Lookup the key in KEYS dictionary and call the corresponding function
     except KeyError:
         return None
